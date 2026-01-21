@@ -20,7 +20,7 @@ export class LandsService {
   /**
    * Créer une nouvelle annonce de terre
    */
-  async create(createLandDto: CreateLandDto, ownerId: string): Promise<Land> {
+  async create(createLandDto: CreateLandDto, ownerId: string): Promise<LandDocument> {
     const createdLand = new this.landModel({
       ...createLandDto,
       owner: ownerId,
@@ -94,7 +94,7 @@ export class LandsService {
   /**
    * Récupérer une terre par ID
    */
-  async findOne(id: string): Promise<Land> {
+  async findOne(id: string): Promise<LandDocument> {
     const land = await this.landModel
       .findById(id)
       .populate('owner', 'fullName email phone')
@@ -144,14 +144,15 @@ export class LandsService {
    * Mettre à jour une terre
    */
   async update(
-    id: string, 
-    updateLandDto: UpdateLandDto, 
+    id: string,
+    updateLandDto: UpdateLandDto,
     userId: string
-  ): Promise<Land> {
+  ): Promise<LandDocument> {
     const land = await this.findOne(id);
 
     // Vérifier que l'utilisateur est le propriétaire
-    if (land.owner._id.toString() !== userId) {
+    const ownerId = (land.owner as any)._id?.toString() || land.owner.toString();
+    if (ownerId !== userId) {
       throw new ForbiddenException('Vous n\'êtes pas autorisé à modifier cette terre');
     }
 
@@ -166,7 +167,8 @@ export class LandsService {
     const land = await this.findOne(id);
 
     // Vérifier que l'utilisateur est le propriétaire
-    if (land.owner._id.toString() !== userId) {
+    const ownerId = (land.owner as any)._id?.toString() || land.owner.toString();
+    if (ownerId !== userId) {
       throw new ForbiddenException('Vous n\'êtes pas autorisé à supprimer cette terre');
     }
 
@@ -176,7 +178,7 @@ export class LandsService {
   /**
    * Récupérer les terres d'un propriétaire
    */
-  async findByOwner(ownerId: string): Promise<Land[]> {
+  async findByOwner(ownerId: string): Promise<LandDocument[]> {
     return this.landModel
       .find({ owner: ownerId })
       .sort({ createdAt: -1 })
