@@ -1,0 +1,338 @@
+{
+  "info": {
+    "name": "AgriLand API",
+    "description": "Collection Postman complète pour l'API AgriLand",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Amadou Diallo\",\n  \"email\": \"amadou@test.com\",\n  \"password\": \"Password123!\",\n  \"phone\": \"+221 77 123 45 67\",\n  \"role\": \"OWNER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set(\"token\", jsonData.access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"amadou@test.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lands",
+      "item": [
+        {
+          "name": "Create Land",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"5 hectares de rizière à Rufisque\",\n  \"description\": \"Excellente rizière avec système d'irrigation moderne\",\n  \"surfaceHectares\": 5.0,\n  \"type\": \"RENT\",\n  \"price\": 750000,\n  \"location\": {\n    \"region\": \"Dakar\",\n    \"commune\": \"Rufisque\",\n    \"coordinates\": {\n      \"type\": \"Point\",\n      \"coordinates\": [-17.2713, 14.7167]\n    }\n  },\n  \"soil\": {\n    \"ph\": 5.9,\n    \"nitrogen\": 45,\n    \"phosphorus\": 28,\n    \"potassium\": 120,\n    \"soilTexture\": \"CLAY\",\n    \"moisture\": 65\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/lands",
+              "host": ["{{baseUrl}}"],
+              "path": ["lands"]
+            }
+          }
+        },
+        {
+          "name": "Get All Lands",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lands",
+              "host": ["{{baseUrl}}"],
+              "path": ["lands"]
+            }
+          }
+        },
+        {
+          "name": "Get Lands with Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lands?type=RENT&minSurface=3&maxSurface=10&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["lands"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "RENT"
+                },
+                {
+                  "key": "minSurface",
+                  "value": "3"
+                },
+                {
+                  "key": "maxSurface",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Land by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lands/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["lands", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Lands for Map",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lands/map",
+              "host": ["{{baseUrl}}"],
+              "path": ["lands", "map"]
+            }
+          }
+        },
+        {
+          "name": "Get Nearby Lands",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lands/nearby?longitude=-17.4467&latitude=14.6937&radius=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["lands", "nearby"],
+              "query": [
+                {
+                  "key": "longitude",
+                  "value": "-17.4467"
+                },
+                {
+                  "key": "latitude",
+                  "value": "14.6937"
+                },
+                {
+                  "key": "radius",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Land",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 800000,\n  \"isAvailable\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/lands/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["lands", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Land",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/lands/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["lands", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recommendations",
+      "item": [
+        {
+          "name": "Get Crop Recommendations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lands/:id/recommendations",
+              "host": ["{{baseUrl}}"],
+              "path": ["lands", ":id", "recommendations"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Contact",
+      "item": [
+        {
+          "name": "Get Owner Contact",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contact/land/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["contact", "land", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
