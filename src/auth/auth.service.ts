@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { RegisterDto, LoginDto } from './dto';
-import { JwtPayload } from '../common/interfaces';
+import { JwtPayload, AuthResponse } from '../common/interfaces';
 
 /**
  * Service d'authentification
@@ -18,9 +18,9 @@ export class AuthService {
   /**
    * Inscription d'un nouvel utilisateur
    */
-  async register(registerDto: RegisterDto) {
+  async register(registerDto: RegisterDto): Promise<AuthResponse> {
     const user = await this.usersService.create(registerDto);
-    
+
     const payload: JwtPayload = {
       sub: user._id.toString(),
       email: user.email,
@@ -28,13 +28,16 @@ export class AuthService {
     };
 
     return {
-      access_token: this.jwtService.sign(payload),
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
+      success: true,
+      data: {
+        access_token: this.jwtService.sign(payload),
+        user: {
+          id: user._id.toString(),
+          fullName: user.fullName,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+        },
       },
     };
   }
@@ -42,7 +45,7 @@ export class AuthService {
   /**
    * Connexion d'un utilisateur existant
    */
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto): Promise<AuthResponse> {
     const user = await this.usersService.findByEmail(loginDto.email);
 
     if (!user) {
@@ -65,13 +68,16 @@ export class AuthService {
     };
 
     return {
-      access_token: this.jwtService.sign(payload),
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
+      success: true,
+      data: {
+        access_token: this.jwtService.sign(payload),
+        user: {
+          id: user._id.toString(),
+          fullName: user.fullName,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+        },
       },
     };
   }
