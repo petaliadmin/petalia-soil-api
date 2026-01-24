@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -44,7 +44,7 @@ export class CreateLandDto {
   @IsNotEmpty({ message: 'La surface est requise' })
   @IsNumber({}, { message: 'La surface doit être un nombre' })
   @Min(0, { message: 'La surface doit être positive' })
-  surface: number;
+  surfaceHectares: number;
 
   @ApiProperty({
     example: LandType.RENT,
@@ -65,11 +65,10 @@ export class CreateLandDto {
   @Min(0, { message: 'Le prix doit être positif' })
   price: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'FCFA',
     description: 'Unité de prix',
     default: 'FCFA',
-    required: false,
   })
   @IsOptional()
   @IsString()
@@ -84,28 +83,27 @@ export class CreateLandDto {
   @Type(() => LocationDto)
   location: LocationDto;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: AddressDto,
     description: 'Adresse de la terre',
   })
-  @IsNotEmpty({ message: "L'adresse est requise" })
+  @IsOptional()
   @ValidateNested()
   @Type(() => AddressDto)
-  address: AddressDto;
+  address?: AddressDto;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: SoilParametersDto,
     description: 'Paramètres du sol',
   })
-  @IsNotEmpty({ message: 'Les paramètres du sol sont requis' })
+  @IsOptional()
   @ValidateNested()
   @Type(() => SoilParametersDto)
-  soilParameters: SoilParametersDto;
+  soilParameters?: SoilParametersDto;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],
     description: 'Liste des URLs des images',
-    required: false,
   })
   @IsOptional()
   @IsArray()

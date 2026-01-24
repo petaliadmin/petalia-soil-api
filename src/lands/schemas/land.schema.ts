@@ -26,7 +26,7 @@ export class Land {
   description: string;
 
   @Prop({ required: true, min: 0 })
-  surface: number;
+  surfaceHectares: number;
 
   @Prop({ required: true, enum: LandType })
   type: LandType;
@@ -50,11 +50,11 @@ export class Land {
   @Prop({ type: LocationSchema, required: true })
   location: Location;
 
-  @Prop({ type: AddressSchema, required: true })
-  address: Address;
+  @Prop({ type: AddressSchema })
+  address?: Address;
 
-  @Prop({ type: SoilParametersSchema, required: true })
-  soilParameters: SoilParameters;
+  @Prop({ type: SoilParametersSchema })
+  soilParameters?: SoilParameters;
 
   @Prop({ type: [CropRecommendationSchema], default: [] })
   recommendedCrops: CropRecommendation[];
@@ -97,14 +97,14 @@ LandSchema.index({ location: '2dsphere' });
 LandSchema.index({ type: 1, status: 1 });
 LandSchema.index({ owner: 1 });
 LandSchema.index({ 'soilParameters.ph': 1 });
-LandSchema.index({ surface: 1 });
+LandSchema.index({ surfaceHectares: 1 });
 LandSchema.index({ 'address.region': 1 });
 LandSchema.index({ 'address.city': 1 });
 
 // Middleware pour calculer pricePerHectare avant sauvegarde
 LandSchema.pre('save', function (next) {
-  if (this.surface > 0) {
-    this.pricePerHectare = Math.round(this.price / this.surface);
+  if (this.surfaceHectares > 0) {
+    this.pricePerHectare = Math.round(this.price / this.surfaceHectares);
   }
   next();
 });

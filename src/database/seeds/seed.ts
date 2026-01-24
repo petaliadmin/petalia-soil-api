@@ -44,7 +44,7 @@ interface CropDoc {
 interface LandDoc {
   title: string;
   description: string;
-  surface: number;
+  surfaceHectares: number;
   type: string;
   price: number;
   priceUnit: string;
@@ -53,7 +53,7 @@ interface LandDoc {
     type: string;
     coordinates: number[];
   };
-  address: {
+  address?: {
     city: string;
     region: string;
     commune: string;
@@ -61,7 +61,7 @@ interface LandDoc {
     fullAddress?: string;
     country: string;
   };
-  soilParameters: {
+  soilParameters?: {
     ph: number;
     npk: {
       nitrogen: number;
@@ -73,24 +73,24 @@ interface LandDoc {
     drainage: string;
     organicMatter?: number;
   };
-  recommendedCrops: Array<{
+  recommendedCrops?: Array<{
     name: string;
     suitability: string;
     icon?: string;
     season?: string;
     expectedYield?: string;
   }>;
-  cultureHistory: Array<{
+  cultureHistory?: Array<{
     year: number;
     crop: string;
     yield?: string;
     notes?: string;
   }>;
   owner: any;
-  images: string[];
+  images?: string[];
   thumbnail?: string;
-  views: number;
-  favorites: number;
+  views?: number;
+  favorites?: number;
 }
 
 async function seed() {
@@ -175,7 +175,7 @@ async function seed() {
       title: 'Terrain maraîcher à Sangalkam',
       description:
         "Excellente terre pour le maraîchage, proche de la route nationale. Accès à l'eau via puits. Idéale pour cultures de tomates, oignons et légumes.",
-      surface: 3.5,
+      surfaceHectares: 3.5,
       type: 'RENT',
       price: 350000,
       priceUnit: 'FCFA',
@@ -218,7 +218,7 @@ async function seed() {
       title: 'Parcelle agricole à Diamniadio',
       description:
         "Grande parcelle près du nouvel aéroport. Sol fertile adapté aux cultures céréalières. Potentiel pour l'agriculture moderne.",
-      surface: 8.0,
+      surfaceHectares: 8.0,
       type: 'SALE',
       price: 24000000,
       priceUnit: 'FCFA',
@@ -260,7 +260,7 @@ async function seed() {
       title: 'Terrain fruitier à Thiès',
       description:
         "Verger avec manguiers et agrumes établis. Sol riche et bien drainé. Système d'irrigation en place.",
-      surface: 5.0,
+      surfaceHectares: 5.0,
       type: 'RENT',
       price: 500000,
       priceUnit: 'FCFA',
@@ -302,7 +302,7 @@ async function seed() {
       title: 'Exploitation céréalière à Mbour',
       description:
         'Grande exploitation pour cultures céréalières. Pluviométrie favorable. Accès facile depuis la nationale.',
-      surface: 15.0,
+      surfaceHectares: 15.0,
       type: 'RENT',
       price: 900000,
       priceUnit: 'FCFA',
@@ -348,7 +348,7 @@ async function seed() {
       title: 'Rizière irriguée à Richard-Toll',
       description:
         "Parcelle dans la zone rizicole du Delta. Accès direct à l'eau d'irrigation. Infrastructure existante pour la culture du riz.",
-      surface: 10.0,
+      surfaceHectares: 10.0,
       type: 'RENT',
       price: 800000,
       priceUnit: 'FCFA',
@@ -391,7 +391,7 @@ async function seed() {
       title: 'Plantation à Ziguinchor',
       description:
         'Terre fertile en Casamance. Climat favorable aux cultures tropicales. Potentiel pour arboriculture fruitière.',
-      surface: 7.0,
+      surfaceHectares: 7.0,
       type: 'SALE',
       price: 14000000,
       priceUnit: 'FCFA',
@@ -434,7 +434,7 @@ async function seed() {
       title: 'Bassin arachidier à Kaolack',
       description:
         "Au cœur du bassin arachidier. Sol parfait pour l'arachide et les légumineuses. Grande superficie pour agriculture extensive.",
-      surface: 20.0,
+      surfaceHectares: 20.0,
       type: 'RENT',
       price: 1200000,
       priceUnit: 'FCFA',
@@ -479,7 +479,7 @@ async function seed() {
       title: 'Grande exploitation à Tambacounda',
       description:
         'Vaste terrain dans la région orientale. Sol riche adapté aux cultures variées. Potentiel pour coton et céréales.',
-      surface: 25.0,
+      surfaceHectares: 25.0,
       type: 'SALE',
       price: 37500000,
       priceUnit: 'FCFA',
@@ -523,7 +523,7 @@ async function seed() {
       title: 'Parcelle maraîchère à Niayes',
       description:
         "Zone des Niayes, idéale pour le maraîchage. Nappe phréatique accessible. Climat tempéré par l'océan.",
-      surface: 2.0,
+      surfaceHectares: 2.0,
       type: 'RENT',
       price: 250000,
       priceUnit: 'FCFA',
@@ -562,7 +562,7 @@ async function seed() {
       title: 'Verger à Kédougou',
       description:
         'Région au climat favorable pour les fruits tropicaux. Sol volcanique riche. Potentiel bio.',
-      surface: 4.0,
+      surfaceHectares: 4.0,
       type: 'SALE',
       price: 6000000,
       priceUnit: 'FCFA',

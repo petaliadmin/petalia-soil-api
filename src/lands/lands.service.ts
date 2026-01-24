@@ -64,12 +64,12 @@ export class LandsService {
     }
 
     if (minSurface !== undefined || maxSurface !== undefined) {
-      query.surface = {};
+      query.surfaceHectares = {};
       if (minSurface !== undefined) {
-        query.surface.$gte = minSurface;
+        query.surfaceHectares.$gte = minSurface;
       }
       if (maxSurface !== undefined) {
-        query.surface.$lte = maxSurface;
+        query.surfaceHectares.$lte = maxSurface;
       }
     }
 
@@ -143,7 +143,7 @@ export class LandsService {
   async findForMap() {
     return this.landModel
       .find({ status: LandStatus.AVAILABLE })
-      .select('title type price location address surface thumbnail')
+      .select('title type price location address surfaceHectares thumbnail')
       .exec();
   }
 
