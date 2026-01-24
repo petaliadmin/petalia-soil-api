@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run build:*)"
+      "Bash(tree:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run lint)"
     ]
   }
 }

@@ -3,6 +3,7 @@ import { AppModule } from '../../app.module';
 import { Model } from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
+import { CROPS_DATABASE } from '../../recommendations/data/crops.data';
 
 // Types
 interface UserDoc {
@@ -15,6 +16,29 @@ interface UserDoc {
   role: string;
   avatar?: string;
   verified: boolean;
+}
+
+interface RangeValue {
+  min: number;
+  max: number;
+}
+
+interface CropDoc {
+  id: string;
+  name: string;
+  icon: string;
+  category: string;
+  season: string;
+  phRange: RangeValue;
+  nitrogenRange: RangeValue;
+  phosphorusRange: RangeValue;
+  potassiumRange: RangeValue;
+  moistureRange: RangeValue;
+  preferredTextures: string[];
+  preferredDrainage: string[];
+  expectedYield: string;
+  description?: string;
+  imageUrl?: string;
 }
 
 interface LandDoc {
@@ -75,12 +99,25 @@ async function seed() {
   const app = await NestFactory.createApplicationContext(AppModule);
 
   const userModel = app.get<Model<UserDoc>>(getModelToken('User'));
+  const cropModel = app.get<Model<CropDoc>>(getModelToken('Crop'));
   const landModel = app.get<Model<LandDoc>>(getModelToken('Land'));
 
   // Clear existing data
   console.log('🗑️  Clearing existing data...');
   await userModel.deleteMany({});
+  await cropModel.deleteMany({});
   await landModel.deleteMany({});
+
+  // Create crops
+  console.log('🌾 Creating crops...');
+  const crops = await cropModel.insertMany(CROPS_DATABASE);
+  console.log(`   ✅ Created ${crops.length} crops`);
+  console.log(`      - Céréales: ${CROPS_DATABASE.filter(c => c.category === 'cereales').length}`);
+  console.log(`      - Légumineuses: ${CROPS_DATABASE.filter(c => c.category === 'legumineuses').length}`);
+  console.log(`      - Tubercules: ${CROPS_DATABASE.filter(c => c.category === 'tubercules').length}`);
+  console.log(`      - Maraîchage: ${CROPS_DATABASE.filter(c => c.category === 'maraichage').length}`);
+  console.log(`      - Cultures industrielles: ${CROPS_DATABASE.filter(c => c.category === 'industrielles').length}`);
+  console.log(`      - Fruits: ${CROPS_DATABASE.filter(c => c.category === 'fruits').length}`);
 
   // Create users
   console.log('👤 Creating users...');
@@ -565,6 +602,10 @@ async function seed() {
   console.log(`   ✅ Created ${createdLands.length} lands`);
 
   console.log('\n✨ Seeding completed successfully!');
+  console.log('\n📊 Summary:');
+  console.log(`   - ${crops.length} crops`);
+  console.log(`   - ${users.length} users`);
+  console.log(`   - ${createdLands.length} lands`);
   console.log('\n📋 Test credentials:');
   console.log('   Admin: admin@petalia.sn / Password123!');
   console.log('   Owner 1: mamadou.diallo@gmail.com / Password123!');

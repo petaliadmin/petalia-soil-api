@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { LandsModule } from './lands/lands.module';
+import { CropsModule } from './crops/crops.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
 import { ContactModule } from './contact/contact.module';
 
@@ -14,7 +15,7 @@ import { ContactModule } from './contact/contact.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    
+
     // Connexion MongoDB Atlas
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
@@ -25,11 +26,12 @@ import { ContactModule } from './contact/contact.module';
       }),
       inject: [ConfigService],
     }),
-    
+
     // Modules de l'application
     AuthModule,
     UsersModule,
     LandsModule,
+    CropsModule,
     RecommendationsModule,
     ContactModule,
   ],
