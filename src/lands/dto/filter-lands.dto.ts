@@ -1,24 +1,41 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional, Min } from 'class-validator';
-import { LandType } from '../../common/enums';
+import { IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { LandType, LandStatus } from '../../common/enums';
 
 /**
  * DTO pour filtrer les terres lors de la recherche
  */
 export class FilterLandsDto {
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: LandType.RENT,
     enum: LandType,
-    description: 'Filtrer par type de transaction'
+    description: 'Filtrer par type de transaction',
   })
   @IsOptional()
   @IsEnum(LandType)
   type?: LandType;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
+    example: LandStatus.AVAILABLE,
+    enum: LandStatus,
+    description: 'Filtrer par statut',
+  })
+  @IsOptional()
+  @IsEnum(LandStatus)
+  status?: LandStatus;
+
+  @ApiPropertyOptional({
+    example: 'Dakar',
+    description: 'Filtrer par région',
+  })
+  @IsOptional()
+  @IsString()
+  region?: string;
+
+  @ApiPropertyOptional({
     example: 5,
-    description: 'Surface minimale en hectares'
+    description: 'Surface minimale en hectares',
   })
   @IsOptional()
   @Type(() => Number)
@@ -26,9 +43,9 @@ export class FilterLandsDto {
   @Min(0)
   minSurface?: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: 10,
-    description: 'Surface maximale en hectares'
+    description: 'Surface maximale en hectares',
   })
   @IsOptional()
   @Type(() => Number)
@@ -36,9 +53,9 @@ export class FilterLandsDto {
   @Min(0)
   maxSurface?: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: 5.5,
-    description: 'pH minimal du sol'
+    description: 'pH minimal du sol',
   })
   @IsOptional()
   @Type(() => Number)
@@ -46,9 +63,9 @@ export class FilterLandsDto {
   @Min(0)
   minPh?: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: 7.0,
-    description: 'pH maximal du sol'
+    description: 'pH maximal du sol',
   })
   @IsOptional()
   @Type(() => Number)
@@ -56,10 +73,10 @@ export class FilterLandsDto {
   @Min(0)
   maxPh?: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: 1,
     description: 'Page pour la pagination',
-    default: 1
+    default: 1,
   })
   @IsOptional()
   @Type(() => Number)
@@ -67,10 +84,10 @@ export class FilterLandsDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: 10,
-    description: 'Nombre d\'éléments par page',
-    default: 10
+    description: "Nombre d'éléments par page",
+    default: 10,
   })
   @IsOptional()
   @Type(() => Number)

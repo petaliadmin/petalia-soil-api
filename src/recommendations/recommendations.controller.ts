@@ -1,48 +1,59 @@
-import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Param, Body, Post } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { RecommendationsService } from './recommendations.service';
-import { LandsService } from '../lands/lands.service';
+import { SoilParametersDto } from '../soil/dto';
 
 /**
  * Contrôleur pour les recommandations de cultures
  */
 @ApiTags('Recommendations')
-@Controller('lands')
+@Controller('recommendations')
 export class RecommendationsController {
   constructor(
     private readonly recommendationsService: RecommendationsService,
-    private readonly landsService: LandsService,
   ) {}
 
-  @Get(':id/recommendations')
-  @ApiOperation({ 
-    summary: 'Obtenir des recommandations de cultures pour une terre' 
+  @Get('crops')
+  @ApiOperation({
+    summary: 'Récupérer toutes les cultures disponibles',
   })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Recommandations générées avec succès' 
+  @ApiResponse({
+    status: 200,
+    description: 'Liste des cultures',
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Terre non trouvée' 
-  })
-  async getRecommendations(@Param('id') id: string) {
-    const land = await this.landsService.findOne(id);
-    
-    if (!land) {
-      throw new NotFoundException('Terre non trouvée');
-    }
+  getAllCrops() {
+    return this.recommendationsService.getAllCrops();
+  }
 
-    const recommendations = this.recommendationsService.generateRecommendations(
-      land.soil,
+  @Get('crops/category/:category')
+  @ApiOperation({
+    summary: 'Récupérer les cultures par catégorie',
+  })
+  @ApiParam({
+    name: 'category',
+    example: 'cereales',
+    description:
+      'Catégorie de cultures (cereales, legumineuses, tubercules, maraichage, industrielles, fruits)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Liste des cultures de la catégorie',
+  })
+  getCropsByCategory(@Param('category') category: string) {
+    return this.recommendationsService.getCropsByCategory(category);
+  }
+
+  @Post('analyze')
+  @ApiOperation({
+    summary: 'Analyser les paramètres du sol et obtenir des recommandations',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Recommandations générées avec succès',
+  })
+  analyzeAndRecommend(@Body() soilParameters: SoilParametersDto) {
+    return this.recommendationsService.generateRecommendations(
+      soilParameters as any,
     );
-
-    return {
-      landId: land._id,
-      landTitle: land.title,
-      soilParameters: land.soil,
-      recommendations,
-      generatedAt: new Date(),
-    };
   }
 }

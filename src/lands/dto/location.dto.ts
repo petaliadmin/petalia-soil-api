@@ -1,66 +1,36 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { 
-  IsNotEmpty, 
-  IsString, 
-  ValidateNested, 
-  IsArray, 
-  ArrayMinSize, 
-  ArrayMaxSize, 
-  IsNumber 
+import {
+  IsNotEmpty,
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
+  IsNumber,
+  IsString,
+  IsOptional,
 } from 'class-validator';
 
 /**
  * DTO pour les coordonnées GeoJSON Point
  */
-class GeoJsonPointDto {
-  @ApiProperty({ 
+export class LocationDto {
+  @ApiProperty({
     example: 'Point',
-    description: 'Type de géométrie (toujours "Point")'
+    description: 'Type de géométrie (toujours "Point")',
+    default: 'Point',
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  type: 'Point';
+  type?: string = 'Point';
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: [-17.4467, 14.6937],
     description: 'Coordonnées [longitude, latitude]',
-    type: [Number]
+    type: [Number],
   })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Les coordonnées sont requises' })
   @IsArray()
   @ArrayMinSize(2)
   @ArrayMaxSize(2)
   @IsNumber({}, { each: true })
-  coordinates: [number, number];
-}
-
-/**
- * DTO pour la localisation d'une terre
- */
-export class LocationDto {
-  @ApiProperty({ 
-    example: 'Dakar',
-    description: 'Région administrative'
-  })
-  @IsNotEmpty({ message: 'La région est requise' })
-  @IsString()
-  region: string;
-
-  @ApiProperty({ 
-    example: 'Rufisque',
-    description: 'Commune ou ville'
-  })
-  @IsNotEmpty({ message: 'La commune est requise' })
-  @IsString()
-  commune: string;
-
-  @ApiProperty({ 
-    type: GeoJsonPointDto,
-    description: 'Coordonnées géographiques'
-  })
-  @IsNotEmpty({ message: 'Les coordonnées sont requises' })
-  @ValidateNested()
-  @Type(() => GeoJsonPointDto)
-  coordinates: GeoJsonPointDto;
+  coordinates: number[];
 }

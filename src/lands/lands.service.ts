@@ -1,12 +1,13 @@
-import { 
-  Injectable, 
-  NotFoundException, 
-  ForbiddenException 
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Land, LandDocument } from './schemas/land.schema';
 import { CreateLandDto, UpdateLandDto, FilterLandsDto } from './dto';
+import { LandStatus } from '../common/enums';
 
 /**
  * Service pour la gestion des terres agricoles
@@ -20,10 +21,14 @@ export class LandsService {
   /**
    * Créer une nouvelle annonce de terre
    */
-  async create(createLandDto: CreateLandDto, ownerId: string): Promise<LandDocument> {
+  async create(
+    createLandDto: CreateLandDto,
+    ownerId: string,
+  ): Promise<LandDocument> {
     const createdLand = new this.landModel({
       ...createLandDto,
       owner: ownerId,
+      status: LandStatus.AVAILABLE,
     });
 
     return createdLand.save();
@@ -33,39 +38,48 @@ export class LandsService {
    * Récupérer toutes les terres avec filtres et pagination
    */
   async findAll(filterDto: FilterLandsDto) {
-    const { 
-      type, 
-      minSurface, 
-      maxSurface, 
-      minPh, 
-      maxPh, 
-      page = 1, 
-      limit = 10 
+    const {
+      type,
+      status,
+      region,
+      minSurface,
+      maxSurface,
+      minPh,
+      maxPh,
+      page = 1,
+      limit = 10,
     } = filterDto;
 
-    const query: any = { isAvailable: true };
+    const query: any = {};
+
+    // Par défaut, ne montrer que les terres disponibles
+    query.status = status || LandStatus.AVAILABLE;
 
     if (type) {
       query.type = type;
     }
 
+    if (region) {
+      query['address.region'] = { $regex: region, $options: 'i' };
+    }
+
     if (minSurface !== undefined || maxSurface !== undefined) {
-      query.surfaceHectares = {};
+      query.surface = {};
       if (minSurface !== undefined) {
-        query.surfaceHectares.$gte = minSurface;
+        query.surface.$gte = minSurface;
       }
       if (maxSurface !== undefined) {
-        query.surfaceHectares.$lte = maxSurface;
+        query.surface.$lte = maxSurface;
       }
     }
 
     if (minPh !== undefined || maxPh !== undefined) {
-      query['soil.ph'] = {};
+      query['soilParameters.ph'] = {};
       if (minPh !== undefined) {
-        query['soil.ph'].$gte = minPh;
+        query['soilParameters.ph'].$gte = minPh;
       }
       if (maxPh !== undefined) {
-        query['soil.ph'].$lte = maxPh;
+        query['soilParameters.ph'].$lte = maxPh;
       }
     }
 
@@ -74,7 +88,7 @@ export class LandsService {
     const [lands, total] = await Promise.all([
       this.landModel
         .find(query)
-        .populate('owner', 'fullName email phone')
+        .populate('owner', 'fullName email phone whatsapp avatar')
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 })
@@ -97,7 +111,23 @@ export class LandsService {
   async findOne(id: string): Promise<LandDocument> {
     const land = await this.landModel
       .findById(id)
-      .populate('owner', 'fullName email phone')
+      .populate('owner', 'fullName email phone whatsapp avatar')
+      .exec();
+
+    if (!land) {
+      throw new NotFoundException('Terre non trouvée');
+    }
+
+    return land;
+  }
+
+  /**
+   * Récupérer une terre par ID et incrémenter les vues
+   */
+  async findOneAndIncrementViews(id: string): Promise<LandDocument> {
+    const land = await this.landModel
+      .findByIdAndUpdate(id, { $inc: { views: 1 } }, { new: true })
+      .populate('owner', 'fullName email phone whatsapp avatar')
       .exec();
 
     if (!land) {
@@ -112,8 +142,8 @@ export class LandsService {
    */
   async findForMap() {
     return this.landModel
-      .find({ isAvailable: true })
-      .select('title type price location surfaceHectares')
+      .find({ status: LandStatus.AVAILABLE })
+      .select('title type price location address surface thumbnail')
       .exec();
   }
 
@@ -125,8 +155,8 @@ export class LandsService {
 
     return this.landModel
       .find({
-        isAvailable: true,
-        'location.coordinates': {
+        status: LandStatus.AVAILABLE,
+        location: {
           $near: {
             $geometry: {
               type: 'Point',
@@ -136,7 +166,7 @@ export class LandsService {
           },
         },
       })
-      .populate('owner', 'fullName email phone')
+      .populate('owner', 'fullName email phone whatsapp avatar')
       .exec();
   }
 
@@ -146,14 +176,17 @@ export class LandsService {
   async update(
     id: string,
     updateLandDto: UpdateLandDto,
-    userId: string
+    userId: string,
   ): Promise<LandDocument> {
     const land = await this.findOne(id);
 
     // Vérifier que l'utilisateur est le propriétaire
-    const ownerId = (land.owner as any)._id?.toString() || land.owner.toString();
+    const ownerId =
+      (land.owner as any)._id?.toString() || land.owner.toString();
     if (ownerId !== userId) {
-      throw new ForbiddenException('Vous n\'êtes pas autorisé à modifier cette terre');
+      throw new ForbiddenException(
+        "Vous n'êtes pas autorisé à modifier cette terre",
+      );
     }
 
     Object.assign(land, updateLandDto);
@@ -167,9 +200,12 @@ export class LandsService {
     const land = await this.findOne(id);
 
     // Vérifier que l'utilisateur est le propriétaire
-    const ownerId = (land.owner as any)._id?.toString() || land.owner.toString();
+    const ownerId =
+      (land.owner as any)._id?.toString() || land.owner.toString();
     if (ownerId !== userId) {
-      throw new ForbiddenException('Vous n\'êtes pas autorisé à supprimer cette terre');
+      throw new ForbiddenException(
+        "Vous n'êtes pas autorisé à supprimer cette terre",
+      );
     }
 
     await this.landModel.findByIdAndDelete(id);
@@ -179,9 +215,14 @@ export class LandsService {
    * Récupérer les terres d'un propriétaire
    */
   async findByOwner(ownerId: string): Promise<LandDocument[]> {
-    return this.landModel
-      .find({ owner: ownerId })
-      .sort({ createdAt: -1 })
-      .exec();
+    return this.landModel.find({ owner: ownerId }).sort({ createdAt: -1 }).exec();
+  }
+
+  /**
+   * Récupérer les recommandations de cultures pour une terre
+   */
+  async getRecommendations(id: string) {
+    const land = await this.findOne(id);
+    return land.recommendedCrops || [];
   }
 }

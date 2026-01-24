@@ -8,6 +8,8 @@ import {
   Delete,
   UseGuards,
   Query,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -34,18 +36,20 @@ export class LandsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.OWNER, UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Créer une nouvelle annonce de terre (OWNER uniquement)' })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Créer une nouvelle annonce de terre (OWNER uniquement)',
+  })
   @ApiResponse({ status: 201, description: 'Terre créée avec succès' })
   @ApiResponse({ status: 403, description: 'Accès interdit' })
-  create(
-    @Body() createLandDto: CreateLandDto,
-    @CurrentUser() user: any,
-  ) {
+  create(@Body() createLandDto: CreateLandDto, @CurrentUser() user: any) {
     return this.landsService.create(createLandDto, user.userId);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Récupérer toutes les terres disponibles avec filtres' })
+  @ApiOperation({
+    summary: 'Récupérer toutes les terres disponibles avec filtres',
+  })
   @ApiResponse({ status: 200, description: 'Liste des terres' })
   findAll(@Query() filterDto: FilterLandsDto) {
     return this.landsService.findAll(filterDto);
@@ -60,19 +64,24 @@ export class LandsController {
 
   @Get('nearby')
   @ApiOperation({ summary: 'Rechercher des terres dans un rayon donné' })
-  @ApiQuery({ name: 'longitude', example: -17.4467 })
-  @ApiQuery({ name: 'latitude', example: 14.6937 })
-  @ApiQuery({ name: 'radius', example: 10, description: 'Rayon en kilomètres' })
+  @ApiQuery({ name: 'latitude', example: 14.6928, required: true })
+  @ApiQuery({ name: 'longitude', example: -17.4467, required: true })
+  @ApiQuery({
+    name: 'radiusKm',
+    example: 50,
+    description: 'Rayon en kilomètres',
+    required: false,
+  })
   @ApiResponse({ status: 200, description: 'Terres à proximité' })
   findNearby(
-    @Query('longitude') longitude: number,
     @Query('latitude') latitude: number,
-    @Query('radius') radius: number,
+    @Query('longitude') longitude: number,
+    @Query('radiusKm') radiusKm: number = 50,
   ) {
     return this.landsService.findNearby(
       Number(longitude),
       Number(latitude),
-      Number(radius),
+      Number(radiusKm),
     );
   }
 
@@ -81,7 +90,17 @@ export class LandsController {
   @ApiResponse({ status: 200, description: 'Détails de la terre' })
   @ApiResponse({ status: 404, description: 'Terre non trouvée' })
   findOne(@Param('id') id: string) {
-    return this.landsService.findOne(id);
+    return this.landsService.findOneAndIncrementViews(id);
+  }
+
+  @Get(':id/recommendations')
+  @ApiOperation({
+    summary: 'Récupérer les recommandations de cultures pour une terre',
+  })
+  @ApiResponse({ status: 200, description: 'Liste des recommandations' })
+  @ApiResponse({ status: 404, description: 'Terre non trouvée' })
+  getRecommendations(@Param('id') id: string) {
+    return this.landsService.getRecommendations(id);
   }
 
   @Patch(':id')
@@ -104,14 +123,12 @@ export class LandsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.OWNER, UserRole.ADMIN)
   @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Supprimer une terre (OWNER uniquement)' })
-  @ApiResponse({ status: 200, description: 'Terre supprimée' })
+  @ApiResponse({ status: 204, description: 'Terre supprimée' })
   @ApiResponse({ status: 403, description: 'Accès interdit' })
   @ApiResponse({ status: 404, description: 'Terre non trouvée' })
-  remove(
-    @Param('id') id: string,
-    @CurrentUser() user: any,
-  ) {
+  remove(@Param('id') id: string, @CurrentUser() user: any) {
     return this.landsService.remove(id, user.userId);
   }
 }

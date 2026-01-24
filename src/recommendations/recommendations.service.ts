@@ -1,7 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { SoilTexture } from '../common/enums';
 import { SoilParameters } from '../soil/schemas/soil-parameters.schema';
-import { CropRecommendation } from './interfaces/crop-recommendation.interface';
+import { CROPS_DATABASE, CropData } from './data/crops.data';
+
+export interface CropRecommendationResult {
+  name: string;
+  suitability: 'excellent' | 'good' | 'moderate';
+  icon: string;
+  season: string;
+  expectedYield: string;
+  score: number;
+  reasons: string[];
+}
 
 /**
  * Service de recommandation de cultures
@@ -12,212 +21,203 @@ export class RecommendationsService {
   /**
    * Génère des recommandations de cultures basées sur les paramètres du sol
    */
-  generateRecommendations(soil: SoilParameters): CropRecommendation[] {
-    const recommendations: CropRecommendation[] = [];
+  generateRecommendations(soil: SoilParameters): CropRecommendationResult[] {
+    const recommendations: CropRecommendationResult[] = [];
 
-    // Recommandations pour le riz
-    if (this.isGoodForRice(soil)) {
-      recommendations.push({
-        crop: 'Riz',
-        suitability: this.getRiceSuitability(soil),
-        reason: this.getRiceReason(soil),
-        confidence: this.calculateRiceConfidence(soil),
-      });
+    for (const crop of CROPS_DATABASE) {
+      const score = this.calculateCropScore(soil, crop);
+
+      if (score >= 40) {
+        const suitability = this.getSuitability(score);
+        const reasons = this.getReasons(soil, crop);
+
+        recommendations.push({
+          name: crop.name,
+          suitability,
+          icon: crop.icon,
+          season: crop.season,
+          expectedYield: crop.expectedYield,
+          score,
+          reasons,
+        });
+      }
     }
 
-    // Recommandations pour le maïs
-    if (this.isGoodForMaize(soil)) {
-      recommendations.push({
-        crop: 'Maïs',
-        suitability: this.getMaizeSuitability(soil),
-        reason: this.getMaizeReason(soil),
-        confidence: this.calculateMaizeConfidence(soil),
-      });
+    // Trier par score décroissant et limiter aux 10 meilleures recommandations
+    return recommendations
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+  }
+
+  /**
+   * Calcule le score de compatibilité entre le sol et une culture
+   */
+  private calculateCropScore(soil: SoilParameters, crop: CropData): number {
+    let score = 0;
+    let factors = 0;
+
+    // Score pH (0-25 points)
+    const phScore = this.calculateRangeScore(
+      soil.ph,
+      crop.phRange.min,
+      crop.phRange.max,
+    );
+    score += phScore * 25;
+    factors += 25;
+
+    // Score Azote (0-15 points)
+    const nitrogenScore = this.calculateRangeScore(
+      soil.npk.nitrogen,
+      crop.nitrogenRange.min,
+      crop.nitrogenRange.max,
+    );
+    score += nitrogenScore * 15;
+    factors += 15;
+
+    // Score Phosphore (0-15 points)
+    const phosphorusScore = this.calculateRangeScore(
+      soil.npk.phosphorus,
+      crop.phosphorusRange.min,
+      crop.phosphorusRange.max,
+    );
+    score += phosphorusScore * 15;
+    factors += 15;
+
+    // Score Potassium (0-15 points)
+    const potassiumScore = this.calculateRangeScore(
+      soil.npk.potassium,
+      crop.potassiumRange.min,
+      crop.potassiumRange.max,
+    );
+    score += potassiumScore * 15;
+    factors += 15;
+
+    // Score Humidité (0-15 points)
+    const moistureScore = this.calculateRangeScore(
+      soil.moisture,
+      crop.moistureRange.min,
+      crop.moistureRange.max,
+    );
+    score += moistureScore * 15;
+    factors += 15;
+
+    // Score Texture (0-10 points)
+    if (crop.preferredTextures.includes(soil.texture)) {
+      score += 10;
+    }
+    factors += 10;
+
+    // Score Drainage (0-5 points)
+    if (crop.preferredDrainage.includes(soil.drainage)) {
+      score += 5;
+    }
+    factors += 5;
+
+    // Normaliser le score sur 100
+    return Math.round((score / factors) * 100);
+  }
+
+  /**
+   * Calcule le score pour une valeur dans une plage donnée
+   */
+  private calculateRangeScore(
+    value: number,
+    min: number,
+    max: number,
+  ): number {
+    if (value >= min && value <= max) {
+      // Valeur optimale - score maximal
+      const midpoint = (min + max) / 2;
+      const range = (max - min) / 2;
+      const distance = Math.abs(value - midpoint);
+      return 1 - (distance / range) * 0.3; // Score entre 0.7 et 1
     }
 
-    // Recommandations pour l'arachide
-    if (this.isGoodForPeanut(soil)) {
-      recommendations.push({
-        crop: 'Arachide',
-        suitability: this.getPeanutSuitability(soil),
-        reason: this.getPeanutReason(soil),
-        confidence: this.calculatePeanutConfidence(soil),
-      });
+    // Valeur hors plage - score réduit
+    const tolerance = (max - min) * 0.3;
+    if (value < min) {
+      const distance = min - value;
+      return Math.max(0, 1 - distance / tolerance) * 0.5;
+    } else {
+      const distance = value - max;
+      return Math.max(0, 1 - distance / tolerance) * 0.5;
+    }
+  }
+
+  /**
+   * Détermine le niveau de compatibilité basé sur le score
+   */
+  private getSuitability(score: number): 'excellent' | 'good' | 'moderate' {
+    if (score >= 80) return 'excellent';
+    if (score >= 60) return 'good';
+    return 'moderate';
+  }
+
+  /**
+   * Génère les raisons de la recommandation
+   */
+  private getReasons(soil: SoilParameters, crop: CropData): string[] {
+    const reasons: string[] = [];
+
+    // pH
+    if (soil.ph >= crop.phRange.min && soil.ph <= crop.phRange.max) {
+      reasons.push(`pH optimal (${soil.ph.toFixed(1)})`);
     }
 
-    // Recommandations pour le maraîchage
-    if (this.isGoodForVegetables(soil)) {
-      recommendations.push({
-        crop: 'Maraîchage (Tomates, Oignons, Choux)',
-        suitability: this.getVegetableSuitability(soil),
-        reason: this.getVegetableReason(soil),
-        confidence: this.calculateVegetableConfidence(soil),
-      });
+    // NPK
+    if (
+      soil.npk.nitrogen >= crop.nitrogenRange.min &&
+      soil.npk.nitrogen <= crop.nitrogenRange.max
+    ) {
+      reasons.push(`Azote adéquat (${soil.npk.nitrogen} mg/kg)`);
     }
 
-    // Recommandations pour le mil/sorgho
-    if (this.isGoodForMillet(soil)) {
-      recommendations.push({
-        crop: 'Mil / Sorgho',
-        suitability: this.getMilletSuitability(soil),
-        reason: this.getMilletReason(soil),
-        confidence: this.calculateMilletConfidence(soil),
-      });
+    if (
+      soil.npk.phosphorus >= crop.phosphorusRange.min &&
+      soil.npk.phosphorus <= crop.phosphorusRange.max
+    ) {
+      reasons.push(`Phosphore adéquat (${soil.npk.phosphorus} mg/kg)`);
     }
 
-    // Recommandations pour le niébé
-    if (this.isGoodForCowpea(soil)) {
-      recommendations.push({
-        crop: 'Niébé',
-        suitability: this.getCowpeaSuitability(soil),
-        reason: this.getCowpeaReason(soil),
-        confidence: this.calculateCowpeaConfidence(soil),
-      });
+    if (
+      soil.npk.potassium >= crop.potassiumRange.min &&
+      soil.npk.potassium <= crop.potassiumRange.max
+    ) {
+      reasons.push(`Potassium adéquat (${soil.npk.potassium} mg/kg)`);
     }
 
-    // Trier par confiance décroissante
-    return recommendations.sort((a, b) => b.confidence - a.confidence);
-  }
-
-  // === RIZ ===
-  private isGoodForRice(soil: SoilParameters): boolean {
-    return soil.ph >= 5.5 && soil.ph <= 6.5 && soil.soilTexture === SoilTexture.CLAY;
-  }
-
-  private getRiceSuitability(soil: SoilParameters): 'Excellente' | 'Bonne' | 'Moyenne' {
-    if (soil.ph >= 5.8 && soil.ph <= 6.2 && soil.nitrogen >= 40) return 'Excellente';
-    if (soil.ph >= 5.5 && soil.ph <= 6.5) return 'Bonne';
-    return 'Moyenne';
-  }
-
-  private getRiceReason(soil: SoilParameters): string {
-    return `Sol argileux avec pH ${soil.ph.toFixed(1)}, idéal pour la rétention d'eau nécessaire au riz`;
-  }
-
-  private calculateRiceConfidence(soil: SoilParameters): number {
-    let confidence = 60;
-    if (soil.ph >= 5.8 && soil.ph <= 6.2) confidence += 20;
-    if (soil.soilTexture === SoilTexture.CLAY) confidence += 15;
-    if (soil.nitrogen >= 40) confidence += 5;
-    return Math.min(confidence, 95);
-  }
-
-  // === MAÏS ===
-  private isGoodForMaize(soil: SoilParameters): boolean {
-    return soil.ph >= 6.0 && soil.ph <= 7.0 && soil.soilTexture === SoilTexture.LOAM;
-  }
-
-  private getMaizeSuitability(soil: SoilParameters): 'Excellente' | 'Bonne' | 'Moyenne' {
-    if (soil.ph >= 6.2 && soil.ph <= 6.8 && soil.nitrogen >= 50 && soil.phosphorus >= 25) {
-      return 'Excellente';
+    // Texture
+    if (crop.preferredTextures.includes(soil.texture)) {
+      reasons.push(`Texture du sol adaptée (${soil.texture})`);
     }
-    if (soil.ph >= 6.0 && soil.ph <= 7.0) return 'Bonne';
-    return 'Moyenne';
-  }
 
-  private getMaizeReason(soil: SoilParameters): string {
-    return `Sol limoneux avec pH ${soil.ph.toFixed(1)}, bon équilibre pour le maïs`;
-  }
-
-  private calculateMaizeConfidence(soil: SoilParameters): number {
-    let confidence = 65;
-    if (soil.ph >= 6.2 && soil.ph <= 6.8) confidence += 15;
-    if (soil.soilTexture === SoilTexture.LOAM) confidence += 15;
-    if (soil.nitrogen >= 50) confidence += 5;
-    return Math.min(confidence, 95);
-  }
-
-  // === ARACHIDE ===
-  private isGoodForPeanut(soil: SoilParameters): boolean {
-    return soil.ph >= 5.0 && soil.ph <= 6.5 && soil.soilTexture === SoilTexture.SANDY;
-  }
-
-  private getPeanutSuitability(soil: SoilParameters): 'Excellente' | 'Bonne' | 'Moyenne' {
-    if (soil.ph >= 5.5 && soil.ph <= 6.0 && soil.soilTexture === SoilTexture.SANDY) {
-      return 'Excellente';
+    // Drainage
+    if (crop.preferredDrainage.includes(soil.drainage)) {
+      reasons.push(`Drainage adapté (${soil.drainage})`);
     }
-    return 'Bonne';
-  }
 
-  private getPeanutReason(soil: SoilParameters): string {
-    return `Sol sableux avec pH ${soil.ph.toFixed(1)}, excellent drainage pour l'arachide`;
-  }
-
-  private calculatePeanutConfidence(soil: SoilParameters): number {
-    let confidence = 70;
-    if (soil.ph >= 5.5 && soil.ph <= 6.0) confidence += 15;
-    if (soil.soilTexture === SoilTexture.SANDY) confidence += 10;
-    if (soil.potassium >= 100) confidence += 5;
-    return Math.min(confidence, 95);
-  }
-
-  // === MARAÎCHAGE ===
-  private isGoodForVegetables(soil: SoilParameters): boolean {
-    const hasGoodNPK = soil.nitrogen >= 60 && soil.phosphorus >= 30 && soil.potassium >= 150;
-    return soil.ph >= 6.0 && soil.ph <= 7.0 && hasGoodNPK;
-  }
-
-  private getVegetableSuitability(soil: SoilParameters): 'Excellente' | 'Bonne' | 'Moyenne' {
-    const npkSum = soil.nitrogen + soil.phosphorus + soil.potassium;
-    if (npkSum >= 300 && soil.ph >= 6.3 && soil.ph <= 6.8) return 'Excellente';
-    if (npkSum >= 240) return 'Bonne';
-    return 'Moyenne';
-  }
-
-  private getVegetableReason(soil: SoilParameters): string {
-    return `NPK élevé (N:${soil.nitrogen}, P:${soil.phosphorus}, K:${soil.potassium}) et pH ${soil.ph.toFixed(1)}, parfait pour cultures intensives`;
-  }
-
-  private calculateVegetableConfidence(soil: SoilParameters): number {
-    let confidence = 60;
-    const npkSum = soil.nitrogen + soil.phosphorus + soil.potassium;
-    if (npkSum >= 300) confidence += 20;
-    if (soil.ph >= 6.3 && soil.ph <= 6.8) confidence += 10;
-    if (soil.soilTexture === SoilTexture.LOAM) confidence += 5;
-    return Math.min(confidence, 95);
-  }
-
-  // === MIL/SORGHO ===
-  private isGoodForMillet(soil: SoilParameters): boolean {
-    return soil.ph >= 5.5 && soil.ph <= 7.5 && soil.soilTexture === SoilTexture.SANDY;
-  }
-
-  private getMilletSuitability(soil: SoilParameters): 'Excellente' | 'Bonne' | 'Moyenne' {
-    if (soil.soilTexture === SoilTexture.SANDY && soil.ph >= 6.0 && soil.ph <= 7.0) {
-      return 'Excellente';
+    // Humidité
+    if (
+      soil.moisture >= crop.moistureRange.min &&
+      soil.moisture <= crop.moistureRange.max
+    ) {
+      reasons.push(`Humidité optimale (${soil.moisture}%)`);
     }
-    return 'Bonne';
+
+    return reasons.length > 0 ? reasons : ['Conditions générales acceptables'];
   }
 
-  private getMilletReason(soil: SoilParameters): string {
-    return `Sol sableux bien drainé, résistant à la sécheresse, adapté au mil/sorgho`;
+  /**
+   * Récupère toutes les cultures disponibles
+   */
+  getAllCrops(): CropData[] {
+    return CROPS_DATABASE;
   }
 
-  private calculateMilletConfidence(soil: SoilParameters): number {
-    let confidence = 75;
-    if (soil.soilTexture === SoilTexture.SANDY) confidence += 10;
-    if (soil.ph >= 6.0 && soil.ph <= 7.0) confidence += 10;
-    return Math.min(confidence, 90);
-  }
-
-  // === NIÉBÉ ===
-  private isGoodForCowpea(soil: SoilParameters): boolean {
-    return soil.ph >= 5.5 && soil.ph <= 7.0;
-  }
-
-  private getCowpeaSuitability(soil: SoilParameters): 'Excellente' | 'Bonne' | 'Moyenne' {
-    if (soil.ph >= 6.0 && soil.ph <= 6.5 && soil.phosphorus >= 20) return 'Excellente';
-    return 'Bonne';
-  }
-
-  private getCowpeaReason(soil: SoilParameters): string {
-    return `pH ${soil.ph.toFixed(1)} adapté au niébé, légumineuse fixatrice d'azote`;
-  }
-
-  private calculateCowpeaConfidence(soil: SoilParameters): number {
-    let confidence = 70;
-    if (soil.ph >= 6.0 && soil.ph <= 6.5) confidence += 15;
-    if (soil.phosphorus >= 20) confidence += 10;
-    return Math.min(confidence, 90);
+  /**
+   * Récupère les cultures par catégorie
+   */
+  getCropsByCategory(category: string): CropData[] {
+    return CROPS_DATABASE.filter((crop) => crop.category === category);
   }
 }

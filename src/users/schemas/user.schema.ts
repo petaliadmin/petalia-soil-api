@@ -21,12 +21,21 @@ export class User {
   @Prop({ required: true })
   phone: string;
 
-  @Prop({ 
-    required: true, 
+  @Prop()
+  whatsapp?: string;
+
+  @Prop({
+    required: true,
     enum: UserRole,
-    default: UserRole.FARMER 
+    default: UserRole.FARMER,
   })
   role: UserRole;
+
+  @Prop()
+  avatar?: string;
+
+  @Prop({ default: false })
+  verified: boolean;
 
   @Prop()
   createdAt: Date;

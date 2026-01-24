@@ -2,7 +2,10 @@
  * Énumération des types de textures de sol
  */
 export enum SoilTexture {
-  SANDY = 'SANDY',
-  CLAY = 'CLAY',
-  LOAM = 'LOAM',
+  SANDY = 'sandy',
+  CLAY = 'clay',
+  LOAMY = 'loamy',
+  SILTY = 'silty',
+  PEATY = 'peaty',
+  CHALKY = 'chalky',
 }
