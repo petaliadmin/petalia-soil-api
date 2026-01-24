@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsString,
   Max,
   Min,
   ValidateNested,
@@ -77,7 +78,7 @@ export class SoilParametersDto {
     description: 'Texture du sol',
   })
   @IsNotEmpty({ message: 'La texture du sol est requise' })
-  @IsEnum(SoilTexture, { message: 'Texture de sol invalide' })
+  @IsString( { message: 'Texture de sol invalide' })
   texture: SoilTexture;
 
   @ApiProperty({
@@ -98,7 +99,7 @@ export class SoilParametersDto {
     description: 'Qualité du drainage',
   })
   @IsNotEmpty({ message: 'La qualité du drainage est requise' })
-  @IsEnum(DrainageQuality, { message: 'Qualité de drainage invalide' })
+  @IsString( { message: 'Qualité de drainage invalide' })
   drainage: DrainageQuality;
 
   @ApiProperty({
