@@ -66,6 +66,19 @@ export class LandsController {
     return this.landsService.findForMap();
   }
 
+  @Get('my-lands')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Récupérer les terres du propriétaire connecté',
+  })
+  @ApiResponse({ status: 200, description: 'Liste des terres du propriétaire' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  findMyLands(@CurrentUser() user: any) {
+    return this.landsService.findByOwner(user.userId);
+  }
+
   @Get('nearby')
   @ApiOperation({ summary: 'Rechercher des terres dans un rayon donné' })
   @ApiQuery({ name: 'latitude', example: 14.6928, required: true })

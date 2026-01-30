@@ -111,6 +111,57 @@ export class InteractionsController {
     return this.interactionsService.getUserStats(user.userId);
   }
 
+  @Get('my-visited-lands')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.FARMER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Récupérer les terres visitées (FARMER uniquement)' })
+  @ApiResponse({ status: 200, description: 'Liste des terres visitées' })
+  async getMyVisitedLands(@CurrentUser() user: any) {
+    const visitedLandIds = await this.interactionsService.getVisitedLandIds(user.userId);
+    const lands = visitedLandIds.length > 0
+      ? await this.landsService.findByIds(visitedLandIds)
+      : [];
+    return {
+      data: lands,
+      total: lands.length,
+    };
+  }
+
+  @Get('my-favorite-lands')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.FARMER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Récupérer les terres aimées (FARMER uniquement)' })
+  @ApiResponse({ status: 200, description: 'Liste des terres favorites' })
+  async getMyFavoriteLands(@CurrentUser() user: any) {
+    const favoriteLandIds = await this.interactionsService.getFavoriteLandIds(user.userId);
+    const lands = favoriteLandIds.length > 0
+      ? await this.landsService.findByIds(favoriteLandIds)
+      : [];
+    return {
+      data: lands,
+      total: lands.length,
+    };
+  }
+
+  @Get('my-rented-lands')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.FARMER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Récupérer les terres louées (FARMER uniquement)' })
+  @ApiResponse({ status: 200, description: 'Liste des terres louées' })
+  async getMyRentedLands(@CurrentUser() user: any) {
+    const rentedLandIds = await this.interactionsService.getRentedLandIds(user.userId);
+    const lands = rentedLandIds.length > 0
+      ? await this.landsService.findByIds(rentedLandIds)
+      : [];
+    return {
+      data: lands,
+      total: lands.length,
+    };
+  }
+
   // ==================== FAVORIS ====================
 
   @Post('lands/:id/favorite')
