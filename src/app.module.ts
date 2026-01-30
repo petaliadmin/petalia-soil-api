@@ -7,6 +7,7 @@ import { LandsModule } from './lands/lands.module';
 import { CropsModule } from './crops/crops.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
 import { ContactModule } from './contact/contact.module';
+import { InteractionsModule } from './interactions/interactions.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ContactModule } from './contact/contact.module';
     CropsModule,
     RecommendationsModule,
     ContactModule,
+    InteractionsModule,
   ],
 })
 export class AppModule {}

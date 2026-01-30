@@ -19,8 +19,9 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { LandsService } from './lands.service';
+import { VisitTrackerService } from './visit-tracker.service';
 import { CreateLandDto, UpdateLandDto, FilterLandsDto } from './dto';
-import { JwtAuthGuard, RolesGuard } from '../common/guards';
+import { JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard } from '../common/guards';
 import { Roles, CurrentUser } from '../common/decorators';
 import { UserRole } from '../common/enums';
 
@@ -30,7 +31,10 @@ import { UserRole } from '../common/enums';
 @ApiTags('Lands')
 @Controller('lands')
 export class LandsController {
-  constructor(private readonly landsService: LandsService) {}
+  constructor(
+    private readonly landsService: LandsService,
+    private readonly visitTrackerService: VisitTrackerService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -86,10 +90,15 @@ export class LandsController {
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Récupérer une terre par ID' })
   @ApiResponse({ status: 200, description: 'Détails de la terre' })
   @ApiResponse({ status: 404, description: 'Terre non trouvée' })
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    // Enregistrer la visite si l'utilisateur est authentifié
+    if (user?.userId) {
+      this.visitTrackerService.recordVisit(user.userId, id);
+    }
     return this.landsService.findOneAndIncrementViews(id);
   }
 

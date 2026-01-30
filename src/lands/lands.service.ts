@@ -225,4 +225,19 @@ export class LandsService {
     const land = await this.findOne(id);
     return land.recommendedCrops || [];
   }
+
+  /**
+   * Récupérer les terres par liste d'IDs
+   */
+  async findByIds(ids: string[]): Promise<LandDocument[]> {
+    if (!ids || ids.length === 0) {
+      return [];
+    }
+
+    return this.landModel
+      .find({ _id: { $in: ids } })
+      .populate('owner', 'fullName email phone whatsapp avatar')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
 }
