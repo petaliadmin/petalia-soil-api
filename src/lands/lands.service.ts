@@ -56,6 +56,8 @@ export class LandsService {
 
   /**
    * Récupérer toutes les terres avec filtres et pagination
+   * Exclut par défaut les terres vendues (SOLD) et louées (RENTED)
+   * Triées par date de création décroissante (les plus récentes en premier)
    */
   async findAll(filterDto: FilterLandsDto) {
     const {
@@ -72,8 +74,13 @@ export class LandsService {
 
     const query: any = {};
 
-    // Par défaut, ne montrer que les terres disponibles
-    query.status = status || LandStatus.AVAILABLE;
+    // Exclure les terres vendues et louées de la liste principale
+    // Seules les terres AVAILABLE et PENDING sont affichées par défaut
+    if (status) {
+      query.status = status;
+    } else {
+      query.status = { $nin: [LandStatus.SOLD, LandStatus.RENTED] };
+    }
 
     if (type) {
       query.type = type;
