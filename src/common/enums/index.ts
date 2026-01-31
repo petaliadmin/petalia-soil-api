@@ -6,3 +6,5 @@ export * from './drainage-quality.enum';
 export * from './rental-status.enum';
 export * from './analysis-request-status.enum';
 export * from './senegal-region.enum';
+export * from './technician-status.enum';
+export * from './mission-status.enum';
