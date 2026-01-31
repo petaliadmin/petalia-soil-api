@@ -12,6 +12,7 @@ import {
   FilterTechniciansDto,
 } from './dto';
 import { TechnicianStatus, SenegalRegion } from '../common/enums';
+import { createPaginatedResult, calculateSkip } from '../common/dto';
 
 /**
  * Service pour la gestion des techniciens agronomes
@@ -54,7 +55,7 @@ export class TechniciansService {
       query.coverageRegions = region;
     }
 
-    const skip = (page - 1) * limit;
+    const skip = calculateSkip(page, limit);
 
     const [technicians, total] = await Promise.all([
       this.technicianModel
@@ -66,13 +67,7 @@ export class TechniciansService {
       this.technicianModel.countDocuments(query),
     ]);
 
-    return {
-      data: technicians,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return createPaginatedResult(technicians, total, page, limit);
   }
 
   /**

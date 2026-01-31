@@ -10,6 +10,7 @@ import {
   UpdateSoilAnalysisRequestDto,
   FilterSoilAnalysisRequestsDto,
 } from './dto';
+import { createPaginatedResult, calculateSkip } from '../common/dto';
 
 /**
  * Service pour la gestion des demandes d'analyse de sol
@@ -47,7 +48,7 @@ export class SoilAnalysisRequestsService {
       query.region = region;
     }
 
-    const skip = (page - 1) * limit;
+    const skip = calculateSkip(page, limit);
 
     const [requests, total] = await Promise.all([
       this.soilAnalysisRequestModel
@@ -59,13 +60,7 @@ export class SoilAnalysisRequestsService {
       this.soilAnalysisRequestModel.countDocuments(query),
     ]);
 
-    return {
-      data: requests,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return createPaginatedResult(requests, total, page, limit);
   }
 
   /**

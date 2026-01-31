@@ -1,12 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsNumber, Min, IsMongoId } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsEnum, IsOptional, IsMongoId } from 'class-validator';
 import { MissionStatus } from '../../common/enums';
+import { PaginationDto } from '../../common/dto';
 
 /**
  * DTO pour filtrer et paginer les missions
  */
-export class FilterMissionsDto {
+export class FilterMissionsDto extends PaginationDto {
   @ApiPropertyOptional({
     description: 'Filtrer par statut',
     enum: MissionStatus,
@@ -21,26 +21,4 @@ export class FilterMissionsDto {
   @IsMongoId()
   @IsOptional()
   technicianId?: string;
-
-  @ApiPropertyOptional({
-    description: 'Numéro de page',
-    default: 1,
-    minimum: 1,
-  })
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number = 1;
-
-  @ApiPropertyOptional({
-    description: "Nombre d'éléments par page",
-    default: 10,
-    minimum: 1,
-  })
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  limit?: number = 10;
 }

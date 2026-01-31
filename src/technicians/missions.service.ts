@@ -13,6 +13,7 @@ import {
 } from '../soil-analysis-requests/schemas/soil-analysis-request.schema';
 import { CreateMissionDto, UpdateMissionDto, FilterMissionsDto } from './dto';
 import { MissionStatus, AnalysisRequestStatus, TechnicianStatus } from '../common/enums';
+import { createPaginatedResult, calculateSkip } from '../common/dto';
 
 /**
  * Service pour la gestion des ordres de mission
@@ -94,7 +95,7 @@ export class MissionsService {
       query.technician = technicianId;
     }
 
-    const skip = (page - 1) * limit;
+    const skip = calculateSkip(page, limit);
 
     const [missions, total] = await Promise.all([
       this.missionModel
@@ -109,13 +110,7 @@ export class MissionsService {
       this.missionModel.countDocuments(query),
     ]);
 
-    return {
-      data: missions,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return createPaginatedResult(missions, total, page, limit);
   }
 
   /**

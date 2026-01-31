@@ -1,12 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsNumber, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsEnum, IsOptional } from 'class-validator';
 import { TechnicianStatus, SenegalRegion } from '../../common/enums';
+import { PaginationDto } from '../../common/dto';
 
 /**
  * DTO pour filtrer et paginer les techniciens
  */
-export class FilterTechniciansDto {
+export class FilterTechniciansDto extends PaginationDto {
   @ApiPropertyOptional({
     description: 'Filtrer par statut',
     enum: TechnicianStatus,
@@ -22,26 +22,4 @@ export class FilterTechniciansDto {
   @IsEnum(SenegalRegion)
   @IsOptional()
   region?: SenegalRegion;
-
-  @ApiPropertyOptional({
-    description: 'Numéro de page',
-    default: 1,
-    minimum: 1,
-  })
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number = 1;
-
-  @ApiPropertyOptional({
-    description: "Nombre d'éléments par page",
-    default: 10,
-    minimum: 1,
-  })
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  limit?: number = 10;
 }

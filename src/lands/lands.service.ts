@@ -9,6 +9,7 @@ import { Land, LandDocument } from './schemas/land.schema';
 import { CreateLandDto, UpdateLandDto, FilterLandsDto } from './dto';
 import { LandStatus } from '../common/enums';
 import { RecommendationsService } from '../recommendations/recommendations.service';
+import { createPaginatedResult, calculateSkip } from '../common/dto';
 
 /**
  * Service pour la gestion des terres agricoles
@@ -110,7 +111,7 @@ export class LandsService {
       }
     }
 
-    const skip = (page - 1) * limit;
+    const skip = calculateSkip(page, limit);
 
     const [lands, total] = await Promise.all([
       this.landModel
@@ -123,13 +124,7 @@ export class LandsService {
       this.landModel.countDocuments(query),
     ]);
 
-    return {
-      data: lands,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return createPaginatedResult(lands, total, page, limit);
   }
 
   /**
