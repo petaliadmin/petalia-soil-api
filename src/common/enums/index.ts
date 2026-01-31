@@ -4,3 +4,5 @@ export * from './land-status.enum';
 export * from './soil-texture.enum';
 export * from './drainage-quality.enum';
 export * from './rental-status.enum';
+export * from './analysis-request-status.enum';
+export * from './senegal-region.enum';

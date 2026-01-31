@@ -8,6 +8,7 @@ import { CropsModule } from './crops/crops.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
 import { ContactModule } from './contact/contact.module';
 import { InteractionsModule } from './interactions/interactions.module';
+import { SoilAnalysisRequestsModule } from './soil-analysis-requests/soil-analysis-requests.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { InteractionsModule } from './interactions/interactions.module';
     RecommendationsModule,
     ContactModule,
     InteractionsModule,
+    SoilAnalysisRequestsModule,
   ],
 })
 export class AppModule {}
