@@ -9,12 +9,14 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiParam,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { SoilAnalysisRequestsService } from './soil-analysis-requests.service';
 import {
@@ -22,6 +24,9 @@ import {
   UpdateSoilAnalysisRequestDto,
   FilterSoilAnalysisRequestsDto,
 } from './dto';
+import { JwtAuthGuard, RolesGuard } from '../common/guards';
+import { Roles } from '../common/decorators';
+import { UserRole } from '../common/enums';
 
 /**
  * Contrôleur pour les demandes d'analyse de sol
@@ -67,8 +72,11 @@ export class SoilAnalysisRequestsController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Lister toutes les demandes avec pagination et filtres',
+    summary: 'Lister toutes les demandes avec pagination et filtres (ADMIN)',
   })
   @ApiResponse({
     status: 200,
@@ -84,6 +92,8 @@ export class SoilAnalysisRequestsController {
       },
     },
   })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 403, description: 'Accès interdit' })
   async findAll(@Query() filterDto: FilterSoilAnalysisRequestsDto) {
     const result = await this.soilAnalysisRequestsService.findAll(filterDto);
     return {
@@ -93,7 +103,10 @@ export class SoilAnalysisRequestsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Récupérer une demande par ID' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Récupérer une demande par ID (ADMIN)' })
   @ApiParam({ name: 'id', description: 'ID de la demande' })
   @ApiResponse({
     status: 200,
@@ -115,6 +128,8 @@ export class SoilAnalysisRequestsController {
       },
     },
   })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 403, description: 'Accès interdit' })
   @ApiResponse({ status: 404, description: 'Demande non trouvée' })
   async findOne(@Param('id') id: string) {
     const data = await this.soilAnalysisRequestsService.findOne(id);
@@ -125,7 +140,10 @@ export class SoilAnalysisRequestsController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: "Mettre à jour le statut d'une demande" })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Mettre à jour le statut d'une demande (ADMIN)" })
   @ApiParam({ name: 'id', description: 'ID de la demande' })
   @ApiResponse({
     status: 200,
@@ -141,6 +159,8 @@ export class SoilAnalysisRequestsController {
       },
     },
   })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 403, description: 'Accès interdit' })
   @ApiResponse({ status: 404, description: 'Demande non trouvée' })
   async update(
     @Param('id') id: string,
@@ -155,8 +175,11 @@ export class SoilAnalysisRequestsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Supprimer une demande' })
+  @ApiOperation({ summary: 'Supprimer une demande (ADMIN)' })
   @ApiParam({ name: 'id', description: 'ID de la demande' })
   @ApiResponse({
     status: 200,
@@ -168,6 +191,8 @@ export class SoilAnalysisRequestsController {
       },
     },
   })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 403, description: 'Accès interdit' })
   @ApiResponse({ status: 404, description: 'Demande non trouvée' })
   async remove(@Param('id') id: string) {
     await this.soilAnalysisRequestsService.remove(id);
