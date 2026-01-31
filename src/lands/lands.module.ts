@@ -5,6 +5,7 @@ import { LandsController } from './lands.controller';
 import { VisitTrackerService } from './visit-tracker.service';
 import { Land, LandSchema } from './schemas/land.schema';
 import { UserVisit, UserVisitSchema } from '../interactions/schemas';
+import { RecommendationsModule } from '../recommendations/recommendations.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { UserVisit, UserVisitSchema } from '../interactions/schemas';
       { name: Land.name, schema: LandSchema },
       { name: UserVisit.name, schema: UserVisitSchema },
     ]),
+    RecommendationsModule,
   ],
   controllers: [LandsController],
   providers: [LandsService, VisitTrackerService],

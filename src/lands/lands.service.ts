@@ -8,6 +8,7 @@ import { Model } from 'mongoose';
 import { Land, LandDocument } from './schemas/land.schema';
 import { CreateLandDto, UpdateLandDto, FilterLandsDto } from './dto';
 import { LandStatus } from '../common/enums';
+import { RecommendationsService } from '../recommendations/recommendations.service';
 
 /**
  * Service pour la gestion des terres agricoles
@@ -16,19 +17,38 @@ import { LandStatus } from '../common/enums';
 export class LandsService {
   constructor(
     @InjectModel(Land.name) private landModel: Model<LandDocument>,
+    private readonly recommendationsService: RecommendationsService,
   ) {}
 
   /**
    * Créer une nouvelle annonce de terre
+   * Génère automatiquement les recommandations de cultures si les paramètres du sol sont fournis
    */
   async create(
     createLandDto: CreateLandDto,
     ownerId: string,
   ): Promise<LandDocument> {
+    let recommendedCrops = [];
+
+    // Générer les recommandations si les paramètres du sol sont fournis
+    if (createLandDto.soilParameters) {
+      const recommendations = this.recommendationsService.generateRecommendations(
+        createLandDto.soilParameters as any,
+      );
+      recommendedCrops = recommendations.map((rec) => ({
+        name: rec.name,
+        suitability: rec.suitability,
+        icon: rec.icon,
+        season: rec.season,
+        expectedYield: rec.expectedYield,
+      }));
+    }
+
     const createdLand = new this.landModel({
       ...createLandDto,
       owner: ownerId,
       status: LandStatus.AVAILABLE,
+      recommendedCrops,
     });
 
     return createdLand.save();
@@ -172,6 +192,7 @@ export class LandsService {
 
   /**
    * Mettre à jour une terre
+   * Régénère les recommandations si les paramètres du sol sont mis à jour
    */
   async update(
     id: string,
@@ -187,6 +208,20 @@ export class LandsService {
       throw new ForbiddenException(
         "Vous n'êtes pas autorisé à modifier cette terre",
       );
+    }
+
+    // Régénérer les recommandations si les paramètres du sol sont mis à jour
+    if (updateLandDto.soilParameters) {
+      const recommendations = this.recommendationsService.generateRecommendations(
+        updateLandDto.soilParameters as any,
+      );
+      land.recommendedCrops = recommendations.map((rec) => ({
+        name: rec.name,
+        suitability: rec.suitability,
+        icon: rec.icon,
+        season: rec.season,
+        expectedYield: rec.expectedYield,
+      }));
     }
 
     Object.assign(land, updateLandDto);
