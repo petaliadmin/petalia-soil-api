@@ -122,7 +122,7 @@ export class LandsService {
         .populate('owner', 'fullName email phone whatsapp avatar')
         .skip(skip)
         .limit(limit)
-        .sort({ createdAt: -1 })
+        //.sort({ createdAt: -1 })
         .exec(),
       this.landModel.countDocuments(query),
     ]);
