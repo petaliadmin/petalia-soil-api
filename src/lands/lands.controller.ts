@@ -79,6 +79,55 @@ export class LandsController {
     return this.landsService.findByOwner(user.userId);
   }
 
+  @Get('pending-validation')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Récupérer les terres en attente de validation (ADMIN)',
+  })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 10 })
+  @ApiResponse({ status: 200, description: 'Liste des terres en attente' })
+  findPendingValidation(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.landsService.findPendingValidation(Number(page), Number(limit));
+  }
+
+  @Patch(':id/validate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Valider une terre (ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Terre validée' })
+  @ApiResponse({ status: 404, description: 'Terre non trouvée' })
+  async validateLand(@Param('id') id: string, @CurrentUser() user: any) {
+    const land = await this.landsService.validateLand(id, user.userId);
+    return {
+      success: true,
+      data: land,
+      message: 'Terre validée avec succès',
+    };
+  }
+
+  @Patch(':id/invalidate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Rejeter/Invalider une terre (ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Terre invalidée' })
+  @ApiResponse({ status: 404, description: 'Terre non trouvée' })
+  async invalidateLand(@Param('id') id: string) {
+    const land = await this.landsService.invalidateLand(id);
+    return {
+      success: true,
+      data: land,
+      message: 'Terre invalidée',
+    };
+  }
+
   @Get('nearby')
   @ApiOperation({ summary: 'Rechercher des terres dans un rayon donné' })
   @ApiQuery({ name: 'latitude', example: 14.6928, required: true })

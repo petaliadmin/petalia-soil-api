@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TechniciansController } from './technicians.controller';
 import { MissionsController } from './missions.controller';
+import { TechnicianPortalController } from './technician-portal.controller';
 import { TechniciansService } from './technicians.service';
 import { MissionsService } from './missions.service';
 import { Technician, TechnicianSchema } from './schemas/technician.schema';
@@ -10,6 +11,7 @@ import {
   SoilAnalysisRequest,
   SoilAnalysisRequestSchema,
 } from '../soil-analysis-requests/schemas/soil-analysis-request.schema';
+import { LandsModule } from '../lands/lands.module';
 
 @Module({
   imports: [
@@ -18,9 +20,10 @@ import {
       { name: Mission.name, schema: MissionSchema },
       { name: SoilAnalysisRequest.name, schema: SoilAnalysisRequestSchema },
     ]),
+    forwardRef(() => LandsModule),
   ],
-  controllers: [TechniciansController, MissionsController],
+  controllers: [TechniciansController, MissionsController, TechnicianPortalController],
   providers: [TechniciansService, MissionsService],
-  exports: [TechniciansService, MissionsService],
+  exports: [TechniciansService, MissionsService, MongooseModule],
 })
 export class TechniciansModule {}

@@ -81,6 +81,24 @@ export class Land {
   @Prop({ default: 0 })
   favorites: number;
 
+  @Prop({ default: false })
+  isValidated: boolean;
+
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'User',
+  })
+  validatedBy?: MongooseSchema.Types.ObjectId;
+
+  @Prop()
+  validatedAt?: Date;
+
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Technician',
+  })
+  createdByTechnician?: MongooseSchema.Types.ObjectId;
+
   @Prop()
   createdAt: Date;
 
@@ -100,6 +118,8 @@ LandSchema.index({ 'soilParameters.ph': 1 });
 LandSchema.index({ surfaceHectares: 1 });
 LandSchema.index({ 'address.region': 1 });
 LandSchema.index({ 'address.city': 1 });
+LandSchema.index({ isValidated: 1 });
+LandSchema.index({ createdByTechnician: 1 });
 
 // Middleware pour calculer pricePerHectare avant sauvegarde
 LandSchema.pre('save', function (next) {

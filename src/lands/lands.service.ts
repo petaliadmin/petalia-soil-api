@@ -75,6 +75,9 @@ export class LandsService {
 
     const query: any = {};
 
+    // Par défaut, n'afficher que les terres validées par l'admin
+    query.isValidated = true;
+
     // Exclure les terres vendues et louées de la liste principale
     // Seules les terres AVAILABLE et PENDING sont affichées par défaut
     if (status) {
@@ -276,5 +279,128 @@ export class LandsService {
       .populate('owner', 'fullName email phone whatsapp avatar')
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  /**
+   * Créer une terre par un technicien (en attente de validation admin)
+   */
+  async createByTechnician(
+    createLandDto: CreateLandDto,
+    ownerId: string,
+    technicianId: string,
+  ): Promise<LandDocument> {
+    let recommendedCrops = [];
+
+    if (createLandDto.soilParameters) {
+      const recommendations = this.recommendationsService.generateRecommendations(
+        createLandDto.soilParameters as any,
+      );
+      recommendedCrops = recommendations.map((rec) => ({
+        name: rec.name,
+        suitability: rec.suitability,
+        icon: rec.icon,
+        season: rec.season,
+        expectedYield: rec.expectedYield,
+      }));
+    }
+
+    const createdLand = new this.landModel({
+      ...createLandDto,
+      owner: ownerId,
+      status: LandStatus.AVAILABLE,
+      recommendedCrops,
+      isValidated: false,
+      createdByTechnician: technicianId,
+    });
+
+    return createdLand.save();
+  }
+
+  /**
+   * Mettre à jour les paramètres du sol par un technicien
+   */
+  async updateSoilParametersByTechnician(
+    id: string,
+    soilParameters: any,
+  ): Promise<LandDocument> {
+    const land = await this.findOne(id);
+
+    const recommendations = this.recommendationsService.generateRecommendations(
+      soilParameters,
+    );
+    land.recommendedCrops = recommendations.map((rec) => ({
+      name: rec.name,
+      suitability: rec.suitability,
+      icon: rec.icon,
+      season: rec.season,
+      expectedYield: rec.expectedYield,
+    }));
+
+    land.soilParameters = soilParameters;
+    return land.save();
+  }
+
+  /**
+   * Valider une terre (Admin uniquement)
+   */
+  async validateLand(id: string, adminId: string): Promise<LandDocument> {
+    const land = await this.landModel.findByIdAndUpdate(
+      id,
+      {
+        isValidated: true,
+        validatedBy: adminId,
+        validatedAt: new Date(),
+      },
+      { new: true },
+    ).populate('owner', 'fullName email phone whatsapp avatar');
+
+    if (!land) {
+      throw new NotFoundException('Terre non trouvée');
+    }
+
+    return land;
+  }
+
+  /**
+   * Rejeter/Invalider une terre (Admin uniquement)
+   */
+  async invalidateLand(id: string): Promise<LandDocument> {
+    const land = await this.landModel.findByIdAndUpdate(
+      id,
+      {
+        isValidated: false,
+        validatedBy: null,
+        validatedAt: null,
+      },
+      { new: true },
+    ).populate('owner', 'fullName email phone whatsapp avatar');
+
+    if (!land) {
+      throw new NotFoundException('Terre non trouvée');
+    }
+
+    return land;
+  }
+
+  /**
+   * Récupérer les terres en attente de validation (Admin)
+   */
+  async findPendingValidation(page: number = 1, limit: number = 10) {
+    const query = { isValidated: false };
+    const skip = calculateSkip(page, limit);
+
+    const [lands, total] = await Promise.all([
+      this.landModel
+        .find(query)
+        .populate('owner', 'fullName email phone whatsapp avatar')
+        .populate('createdByTechnician', 'fullName email phone')
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .exec(),
+      this.landModel.countDocuments(query),
+    ]);
+
+    return createPaginatedResult(lands, total, page, limit);
   }
 }
