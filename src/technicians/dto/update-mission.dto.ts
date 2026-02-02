@@ -49,6 +49,13 @@ export class UpdateMissionDto {
   technicianNotes?: string;
 
   @ApiPropertyOptional({
+    description: 'Rapport de mission',
+  })
+  @IsString()
+  @IsOptional()
+  report?: string;
+
+  @ApiPropertyOptional({
     description: 'URLs des pièces jointes',
     type: [String],
   })

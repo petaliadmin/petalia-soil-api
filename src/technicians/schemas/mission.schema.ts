@@ -49,6 +49,9 @@ export class Mission {
   @Prop({ trim: true })
   technicianNotes?: string;
 
+  @Prop({ trim: true })
+  report?: string;
+
   @Prop({ type: [String], default: [] })
   attachments: string[];
 
