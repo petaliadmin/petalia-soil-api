@@ -50,6 +50,7 @@ export class LandsService {
       owner: ownerId,
       status: LandStatus.AVAILABLE,
       recommendedCrops,
+      isValidated: true,
     });
 
     return createdLand.save();
@@ -75,7 +76,7 @@ export class LandsService {
 
     const query: any = {};
 
-    // Par défaut, n'afficher que les terres validées par l'admin
+    // Seules les terres validées sont affichées
     query.isValidated = true;
 
     // Exclure les terres vendues et louées de la liste principale
@@ -122,7 +123,7 @@ export class LandsService {
         .populate('owner', 'fullName email phone whatsapp avatar')
         .skip(skip)
         .limit(limit)
-        //.sort({ createdAt: -1 })
+        .sort({ createdAt: -1 })
         .exec(),
       this.landModel.countDocuments(query),
     ]);
