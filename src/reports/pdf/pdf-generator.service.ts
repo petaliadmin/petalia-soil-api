@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import * as PDFDocument from 'pdfkit';
+import PDFDocument = require('pdfkit');
 import { Response } from 'express';
 import { PDF_COLORS, PDF_FONTS, PDF_LAYOUT } from './pdf-styles.constants';
 import { AmendmentCalculator } from '../utils/amendment-calculator.util';
