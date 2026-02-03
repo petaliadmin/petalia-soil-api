@@ -10,7 +10,6 @@ import { ContactModule } from './contact/contact.module';
 import { InteractionsModule } from './interactions/interactions.module';
 import { SoilAnalysisRequestsModule } from './soil-analysis-requests/soil-analysis-requests.module';
 import { TechniciansModule } from './technicians/technicians.module';
-import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -41,7 +40,6 @@ import { ReportsModule } from './reports/reports.module';
     InteractionsModule,
     SoilAnalysisRequestsModule,
     TechniciansModule,
-    ReportsModule,
   ],
 })
 export class AppModule {}

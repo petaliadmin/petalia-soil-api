@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Schema as MongooseSchema } from 'mongoose';
 import { AnalysisRequestStatus, SenegalRegion } from '../../common/enums';
 
 export type SoilAnalysisRequestDocument = SoilAnalysisRequest & Document;
@@ -46,6 +46,12 @@ export class SoilAnalysisRequest {
   coordinates?: Coordinates;
 
   @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Land',
+  })
+  land?: MongooseSchema.Types.ObjectId;
+
+  @Prop({
     required: true,
     enum: AnalysisRequestStatus,
     default: AnalysisRequestStatus.PENDING,
@@ -67,3 +73,4 @@ SoilAnalysisRequestSchema.index({ status: 1 });
 SoilAnalysisRequestSchema.index({ region: 1 });
 SoilAnalysisRequestSchema.index({ createdAt: -1 });
 SoilAnalysisRequestSchema.index({ email: 1 });
+SoilAnalysisRequestSchema.index({ land: 1 });

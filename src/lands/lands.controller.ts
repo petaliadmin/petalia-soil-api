@@ -6,10 +6,12 @@ import {
   Patch,
   Param,
   Delete,
+  Res,
   UseGuards,
   Query,
   HttpCode,
   HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,8 +20,10 @@ import {
   ApiResponse,
   ApiQuery,
 } from '@nestjs/swagger';
+import { Response } from 'express';
 import { LandsService } from './lands.service';
 import { VisitTrackerService } from './visit-tracker.service';
+import { ReportsService } from '../reports/reports.service';
 import { CreateLandDto, UpdateLandDto, FilterLandsDto } from './dto';
 import { JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard } from '../common/guards';
 import { Roles, CurrentUser } from '../common/decorators';
@@ -34,6 +38,7 @@ export class LandsController {
   constructor(
     private readonly landsService: LandsService,
     private readonly visitTrackerService: VisitTrackerService,
+    private readonly reportsService: ReportsService,
   ) {}
 
   @Post()
@@ -149,6 +154,38 @@ export class LandsController {
       Number(latitude),
       Number(radiusKm),
     );
+  }
+
+  @Get(':id/report/pdf')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Generer le rapport PDF d\'analyse de sol',
+    description:
+      'Genere un rapport complet incluant analyse du sol, recommandations de cultures, plan de fertilisation, calendrier cultural et conseils agronomiques.',
+  })
+  @ApiResponse({ status: 200, description: 'Rapport PDF genere avec succes' })
+  @ApiResponse({ status: 400, description: 'Parametres de sol manquants' })
+  @ApiResponse({ status: 404, description: 'Terre non trouvee' })
+  async generateReport(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      await this.reportsService.generateSoilReport(id, res);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        res.status(error.getStatus()).json({
+          success: false,
+          message: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: 'Erreur lors de la generation du rapport',
+        });
+      }
+    }
   }
 
   @Get(':id')

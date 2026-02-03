@@ -7,6 +7,7 @@ import {
   IsPositive,
   IsEnum,
   IsOptional,
+  IsMongoId,
   ValidateNested,
   Min,
   Max,
@@ -111,4 +112,12 @@ export class CreateSoilAnalysisRequestDto {
   @Type(() => CoordinatesDto)
   @IsOptional()
   coordinates?: CoordinatesDto;
+
+  @ApiPropertyOptional({
+    description: 'ID de la terre associee a cette demande',
+    example: '64abc123def456',
+  })
+  @IsMongoId()
+  @IsOptional()
+  land?: string;
 }

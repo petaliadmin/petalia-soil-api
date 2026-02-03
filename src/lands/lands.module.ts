@@ -7,6 +7,8 @@ import { Land, LandSchema } from './schemas/land.schema';
 import { UserVisit, UserVisitSchema } from '../interactions/schemas';
 import { RecommendationsModule } from '../recommendations/recommendations.module';
 import { TechniciansModule } from '../technicians/technicians.module';
+import { ReportsService } from '../reports/reports.service';
+import { PdfGeneratorService } from '../reports/pdf/pdf-generator.service';
 
 @Module({
   imports: [
@@ -18,7 +20,7 @@ import { TechniciansModule } from '../technicians/technicians.module';
     forwardRef(() => TechniciansModule),
   ],
   controllers: [LandsController],
-  providers: [LandsService, VisitTrackerService],
+  providers: [LandsService, VisitTrackerService, ReportsService, PdfGeneratorService],
   exports: [LandsService],
 })
 export class LandsModule {}

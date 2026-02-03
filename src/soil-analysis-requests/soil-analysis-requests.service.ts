@@ -53,6 +53,7 @@ export class SoilAnalysisRequestsService {
     const [requests, total] = await Promise.all([
       this.soilAnalysisRequestModel
         .find(query)
+        .populate('land', 'title surfaceHectares address type price status thumbnail')
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 })
@@ -67,7 +68,10 @@ export class SoilAnalysisRequestsService {
    * Récupérer une demande par ID
    */
   async findOne(id: string): Promise<SoilAnalysisRequestDocument> {
-    const request = await this.soilAnalysisRequestModel.findById(id).exec();
+    const request = await this.soilAnalysisRequestModel
+      .findById(id)
+      .populate('land', 'title surfaceHectares address type price status thumbnail soilParameters recommendedCrops')
+      .exec();
 
     if (!request) {
       throw new NotFoundException("Demande d'analyse non trouvée");
@@ -85,6 +89,7 @@ export class SoilAnalysisRequestsService {
   ): Promise<SoilAnalysisRequestDocument> {
     const request = await this.soilAnalysisRequestModel
       .findByIdAndUpdate(id, updateDto, { new: true })
+      .populate('land', 'title surfaceHectares address type price status thumbnail')
       .exec();
 
     if (!request) {
