@@ -56,7 +56,7 @@ export class Technician {
   @Prop({ trim: true })
   notes?: string;
 
-  @Prop({ required: true, unique: true })
+  @Prop({ unique: true })
   accessCode: string;
 
   @Prop()

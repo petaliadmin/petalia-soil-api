@@ -15,6 +15,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiHeader,
+  ApiBody,
 } from '@nestjs/swagger';
 import { MissionsService } from './missions.service';
 import { TechniciansService } from './technicians.service';
@@ -30,12 +31,6 @@ import { CurrentTechnician } from '../common/decorators';
  */
 @ApiTags('Technician Portal')
 @Controller('technician-portal')
-@UseGuards(TechnicianAuthGuard)
-@ApiHeader({
-  name: 'x-technician-code',
-  description: "Code d'accès du technicien (ex: TECH-ABC123)",
-  required: true,
-})
 export class TechnicianPortalController {
   constructor(
     private readonly missionsService: MissionsService,
@@ -43,7 +38,63 @@ export class TechnicianPortalController {
     private readonly landsService: LandsService,
   ) {}
 
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Authentifier un technicien avec son code d\'accès' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        accessCode: {
+          type: 'string',
+          example: 'TECH-ABC123',
+          description: 'Code d\'accès unique du technicien',
+        },
+      },
+      required: ['accessCode'],
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Connexion réussie' })
+  @ApiResponse({ status: 404, description: 'Code d\'accès invalide' })
+  async login(@Body() body: { accessCode: string }) {
+    const technician = await this.techniciansService.findByAccessCode(
+      body.accessCode,
+    );
+
+    const activeMissions = await this.missionsService.findByTechnician(
+      technician._id.toString(),
+    );
+    const activeMissionsCount = activeMissions.filter(
+      (m: any) => m.status !== 'completed' && m.status !== 'cancelled',
+    ).length;
+
+    return {
+      success: true,
+      data: {
+        id: technician._id,
+        fullName: technician.fullName,
+        email: technician.email,
+        phone: technician.phone,
+        whatsapp: technician.whatsapp,
+        avatar: technician.avatar,
+        specialization: technician.specialization,
+        coverageRegions: technician.coverageRegions,
+        completedMissions: technician.completedMissions,
+        status: technician.status,
+        accessCode: technician.accessCode,
+        activeMissionsCount,
+      },
+      message: 'Connexion réussie',
+    };
+  }
+
   @Get('me')
+  @UseGuards(TechnicianAuthGuard)
+  @ApiHeader({
+    name: 'x-technician-code',
+    description: "Code d'accès du technicien (ex: TECH-ABC123)",
+    required: true,
+  })
   @ApiOperation({ summary: 'Récupérer les informations du technicien connecté' })
   @ApiResponse({ status: 200, description: 'Informations du technicien' })
   @ApiResponse({ status: 401, description: 'Code d\'accès invalide' })
@@ -64,6 +115,12 @@ export class TechnicianPortalController {
   }
 
   @Get('missions')
+  @UseGuards(TechnicianAuthGuard)
+  @ApiHeader({
+    name: 'x-technician-code',
+    description: "Code d'accès du technicien (ex: TECH-ABC123)",
+    required: true,
+  })
   @ApiOperation({ summary: 'Récupérer les missions assignées au technicien' })
   @ApiResponse({ status: 200, description: 'Liste des missions' })
   async getMyMissions(@CurrentTechnician() technician: any) {
@@ -78,6 +135,12 @@ export class TechnicianPortalController {
   }
 
   @Get('missions/:id')
+  @UseGuards(TechnicianAuthGuard)
+  @ApiHeader({
+    name: 'x-technician-code',
+    description: "Code d'accès du technicien (ex: TECH-ABC123)",
+    required: true,
+  })
   @ApiOperation({ summary: 'Récupérer les détails d\'une mission' })
   @ApiParam({ name: 'id', description: 'ID de la mission' })
   @ApiResponse({ status: 200, description: 'Détails de la mission' })
@@ -104,6 +167,12 @@ export class TechnicianPortalController {
   }
 
   @Patch('missions/:id/start')
+  @UseGuards(TechnicianAuthGuard)
+  @ApiHeader({
+    name: 'x-technician-code',
+    description: "Code d'accès du technicien (ex: TECH-ABC123)",
+    required: true,
+  })
   @ApiOperation({ summary: 'Démarrer une mission (passer en cours)' })
   @ApiParam({ name: 'id', description: 'ID de la mission' })
   @ApiResponse({ status: 200, description: 'Mission démarrée' })
@@ -133,6 +202,12 @@ export class TechnicianPortalController {
   }
 
   @Patch('missions/:id/complete')
+  @UseGuards(TechnicianAuthGuard)
+  @ApiHeader({
+    name: 'x-technician-code',
+    description: "Code d'accès du technicien (ex: TECH-ABC123)",
+    required: true,
+  })
   @ApiOperation({ summary: 'Marquer une mission comme terminée' })
   @ApiParam({ name: 'id', description: 'ID de la mission' })
   @ApiResponse({ status: 200, description: 'Mission terminée' })
@@ -164,6 +239,12 @@ export class TechnicianPortalController {
   }
 
   @Patch('lands/:id/soil-data')
+  @UseGuards(TechnicianAuthGuard)
+  @ApiHeader({
+    name: 'x-technician-code',
+    description: "Code d'accès du technicien (ex: TECH-ABC123)",
+    required: true,
+  })
   @ApiOperation({ summary: 'Mettre à jour les données du capteur de sol' })
   @ApiParam({ name: 'id', description: 'ID de la terre' })
   @ApiResponse({ status: 200, description: 'Données du sol mises à jour' })
@@ -191,6 +272,12 @@ export class TechnicianPortalController {
   }
 
   @Post('lands')
+  @UseGuards(TechnicianAuthGuard)
+  @ApiHeader({
+    name: 'x-technician-code',
+    description: "Code d'accès du technicien (ex: TECH-ABC123)",
+    required: true,
+  })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Créer une nouvelle parcelle (en attente de validation admin)',
@@ -228,6 +315,12 @@ export class TechnicianPortalController {
   }
 
   @Get('lands/:id')
+  @UseGuards(TechnicianAuthGuard)
+  @ApiHeader({
+    name: 'x-technician-code',
+    description: "Code d'accès du technicien (ex: TECH-ABC123)",
+    required: true,
+  })
   @ApiOperation({ summary: 'Récupérer les détails d\'une parcelle' })
   @ApiParam({ name: 'id', description: 'ID de la terre' })
   @ApiResponse({ status: 200, description: 'Détails de la terre' })

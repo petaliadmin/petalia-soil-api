@@ -133,6 +133,21 @@ export class TechniciansService {
   }
 
   /**
+   * Authentifier un technicien par son code d'acces
+   */
+  async findByAccessCode(accessCode: string): Promise<TechnicianDocument> {
+    const technician = await this.technicianModel
+      .findOne({ accessCode })
+      .exec();
+
+    if (!technician) {
+      throw new NotFoundException('Code d\'acces invalide');
+    }
+
+    return technician;
+  }
+
+  /**
    * Incrémenter le compteur de missions complétées
    */
   async incrementCompletedMissions(id: string): Promise<void> {
