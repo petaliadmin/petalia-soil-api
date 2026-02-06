@@ -120,7 +120,16 @@ export class MissionsService {
     const mission = await this.missionModel
       .findById(id)
       .populate('technician', 'fullName email phone specialization')
-      .populate('analysisRequest')
+      .populate({
+        path: 'analysisRequest',
+        populate: {
+          path: 'land',
+          populate: {
+            path: 'owner',
+            select: 'fullName email phone whatsapp',
+          },
+        },
+      })
       .populate('assignedBy', 'fullName email')
       .exec();
 
@@ -137,7 +146,16 @@ export class MissionsService {
   async findByTechnician(technicianId: string): Promise<MissionDocument[]> {
     return this.missionModel
       .find({ technician: technicianId })
-      .populate('analysisRequest', 'fullName region commune surface scheduledDate')
+      .populate({
+        path: 'analysisRequest',
+        populate: {
+          path: 'land',
+          populate: {
+            path: 'owner',
+            select: 'fullName email phone whatsapp',
+          },
+        },
+      })
       .sort({ scheduledDate: -1 })
       .exec();
   }

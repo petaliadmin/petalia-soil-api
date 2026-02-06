@@ -20,6 +20,7 @@ import {
 import { MissionsService } from './missions.service';
 import { TechniciansService } from './technicians.service';
 import { LandsService } from '../lands/lands.service';
+import { SoilAnalysisRequestsService } from '../soil-analysis-requests/soil-analysis-requests.service';
 import { UpdateSoilDataDto } from './dto';
 import { CreateLandDto } from '../lands/dto';
 import { TechnicianAuthGuard } from '../common/guards';
@@ -36,6 +37,7 @@ export class TechnicianPortalController {
     private readonly missionsService: MissionsService,
     private readonly techniciansService: TechniciansService,
     private readonly landsService: LandsService,
+    private readonly soilAnalysisRequestsService: SoilAnalysisRequestsService,
   ) {}
 
   @Post('login')
@@ -257,6 +259,7 @@ export class TechnicianPortalController {
     const land = await this.landsService.updateSoilParametersByTechnician(
       id,
       updateSoilDataDto,
+      technician._id.toString(),
     );
 
     return {
@@ -329,6 +332,47 @@ export class TechnicianPortalController {
     return {
       success: true,
       data: land,
+    };
+  }
+
+  @Patch('missions/:id/link-land')
+  @UseGuards(TechnicianAuthGuard)
+  @ApiHeader({
+    name: 'x-technician-code',
+    description: "Code d'accès du technicien (ex: TECH-ABC123)",
+    required: true,
+  })
+  @ApiOperation({ summary: 'Lier une terre à la demande d\'analyse d\'une mission' })
+  @ApiParam({ name: 'id', description: 'ID de la mission' })
+  @ApiResponse({ status: 200, description: 'Terre liée avec succès' })
+  @ApiResponse({ status: 404, description: 'Mission non trouvée' })
+  async linkLandToMission(
+    @Param('id') id: string,
+    @Body() body: { landId: string },
+    @CurrentTechnician() technician: any,
+  ) {
+    const mission = await this.missionsService.findOne(id);
+
+    // Vérifier que la mission appartient au technicien
+    const missionTechId = (mission.technician as any)._id?.toString() || mission.technician.toString();
+    if (missionTechId !== technician._id.toString()) {
+      return {
+        success: false,
+        message: 'Cette mission ne vous est pas assignée',
+      };
+    }
+
+    // Lier la terre à la demande d'analyse
+    const analysisRequestId = (mission.analysisRequest as any)._id?.toString() || mission.analysisRequest.toString();
+    const updatedRequest = await this.soilAnalysisRequestsService.linkLand(
+      analysisRequestId,
+      body.landId,
+    );
+
+    return {
+      success: true,
+      data: updatedRequest,
+      message: 'Terre liée à la demande d\'analyse avec succès',
     };
   }
 }

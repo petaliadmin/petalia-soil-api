@@ -6,8 +6,13 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Land, LandDocument } from './schemas/land.schema';
+import { User, UserDocument } from '../users/schemas/user.schema';
+import {
+  SoilAnalysisRequest,
+  SoilAnalysisRequestDocument,
+} from '../soil-analysis-requests/schemas/soil-analysis-request.schema';
 import { CreateLandDto, UpdateLandDto, FilterLandsDto } from './dto';
-import { LandStatus } from '../common/enums';
+import { LandStatus, AnalysisRequestStatus } from '../common/enums';
 import { RecommendationsService } from '../recommendations/recommendations.service';
 import { createPaginatedResult, calculateSkip } from '../common/dto';
 
@@ -18,42 +23,54 @@ import { createPaginatedResult, calculateSkip } from '../common/dto';
 export class LandsService {
   constructor(
     @InjectModel(Land.name) private landModel: Model<LandDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(SoilAnalysisRequest.name)
+    private soilAnalysisRequestModel: Model<SoilAnalysisRequestDocument>,
     private readonly recommendationsService: RecommendationsService,
   ) {}
 
   /**
    * Créer une nouvelle annonce de terre
-   * Génère automatiquement les recommandations de cultures si les paramètres du sol sont fournis
+   * Génère automatiquement une demande d'analyse de sol
    */
   async create(
     createLandDto: CreateLandDto,
     ownerId: string,
   ): Promise<LandDocument> {
-    let recommendedCrops = [];
-
-    // Générer les recommandations si les paramètres du sol sont fournis
-    if (createLandDto.soilParameters) {
-      const recommendations = this.recommendationsService.generateRecommendations(
-        createLandDto.soilParameters as any,
-      );
-      recommendedCrops = recommendations.map((rec) => ({
-        name: rec.name,
-        suitability: rec.suitability,
-        icon: rec.icon,
-        season: rec.season,
-        expectedYield: rec.expectedYield,
-      }));
-    }
-
     const createdLand = new this.landModel({
       ...createLandDto,
       owner: ownerId,
       status: LandStatus.AVAILABLE,
-      recommendedCrops,
       isValidated: true,
     });
 
-    return createdLand.save();
+    const savedLand = await createdLand.save();
+
+    // Récupérer les infos du propriétaire pour la demande d'analyse
+    const owner = await this.userModel.findById(ownerId).exec();
+
+    if (owner && createLandDto.address?.region) {
+      const analysisRequest = new this.soilAnalysisRequestModel({
+        fullName: owner.fullName,
+        email: owner.email,
+        phone: owner.phone,
+        region: createLandDto.address.region,
+        commune: createLandDto.address.commune || '',
+        surface: createLandDto.surfaceHectares,
+        description: `Demande d'analyse automatique pour la terre: ${createLandDto.title}`,
+        land: savedLand._id,
+        status: AnalysisRequestStatus.PENDING,
+        ...(createLandDto.location?.coordinates && {
+          coordinates: {
+            latitude: createLandDto.location.coordinates[1],
+            longitude: createLandDto.location.coordinates[0],
+          },
+        }),
+      });
+      await analysisRequest.save();
+    }
+
+    return savedLand;
   }
 
   /**
@@ -216,20 +233,6 @@ export class LandsService {
       );
     }
 
-    // Régénérer les recommandations si les paramètres du sol sont mis à jour
-    if (updateLandDto.soilParameters) {
-      const recommendations = this.recommendationsService.generateRecommendations(
-        updateLandDto.soilParameters as any,
-      );
-      land.recommendedCrops = recommendations.map((rec) => ({
-        name: rec.name,
-        suitability: rec.suitability,
-        icon: rec.icon,
-        season: rec.season,
-        expectedYield: rec.expectedYield,
-      }));
-    }
-
     Object.assign(land, updateLandDto);
     return land.save();
   }
@@ -290,26 +293,10 @@ export class LandsService {
     ownerId: string,
     technicianId: string,
   ): Promise<LandDocument> {
-    let recommendedCrops = [];
-
-    if (createLandDto.soilParameters) {
-      const recommendations = this.recommendationsService.generateRecommendations(
-        createLandDto.soilParameters as any,
-      );
-      recommendedCrops = recommendations.map((rec) => ({
-        name: rec.name,
-        suitability: rec.suitability,
-        icon: rec.icon,
-        season: rec.season,
-        expectedYield: rec.expectedYield,
-      }));
-    }
-
     const createdLand = new this.landModel({
       ...createLandDto,
       owner: ownerId,
       status: LandStatus.AVAILABLE,
-      recommendedCrops,
       isValidated: false,
       createdByTechnician: technicianId,
     });
@@ -323,6 +310,7 @@ export class LandsService {
   async updateSoilParametersByTechnician(
     id: string,
     soilParameters: any,
+    technicianId: string,
   ): Promise<LandDocument> {
     const land = await this.findOne(id);
 
@@ -337,7 +325,13 @@ export class LandsService {
       expectedYield: rec.expectedYield,
     }));
 
-    land.soilParameters = soilParameters;
+    land.soilParameters = {
+      ...soilParameters,
+      measuredBy: technicianId,
+      measurementDate: soilParameters.measurementDate
+        ? new Date(soilParameters.measurementDate)
+        : new Date(),
+    };
     return land.save();
   }
 

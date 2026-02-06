@@ -5,6 +5,8 @@ import { LandsController } from './lands.controller';
 import { VisitTrackerService } from './visit-tracker.service';
 import { Land, LandSchema } from './schemas/land.schema';
 import { UserVisit, UserVisitSchema } from '../interactions/schemas';
+import { User, UserSchema } from '../users/schemas/user.schema';
+import { SoilAnalysisRequest, SoilAnalysisRequestSchema } from '../soil-analysis-requests/schemas/soil-analysis-request.schema';
 import { RecommendationsModule } from '../recommendations/recommendations.module';
 import { TechniciansModule } from '../technicians/technicians.module';
 import { ReportsService } from '../reports/reports.service';
@@ -15,6 +17,8 @@ import { PdfGeneratorService } from '../reports/pdf/pdf-generator.service';
     MongooseModule.forFeature([
       { name: Land.name, schema: LandSchema },
       { name: UserVisit.name, schema: UserVisitSchema },
+      { name: User.name, schema: UserSchema },
+      { name: SoilAnalysisRequest.name, schema: SoilAnalysisRequestSchema },
     ]),
     RecommendationsModule,
     forwardRef(() => TechniciansModule),

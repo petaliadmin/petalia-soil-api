@@ -13,7 +13,6 @@ import {
 import { LandType } from '../../common/enums';
 import { LocationDto } from './location.dto';
 import { AddressDto } from './address.dto';
-import { SoilParametersDto } from '../../soil/dto';
 
 /**
  * DTO pour créer une nouvelle terre
@@ -91,15 +90,6 @@ export class CreateLandDto {
   @ValidateNested()
   @Type(() => AddressDto)
   address?: AddressDto;
-
-  @ApiPropertyOptional({
-    type: SoilParametersDto,
-    description: 'Paramètres du sol',
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => SoilParametersDto)
-  soilParameters?: SoilParametersDto;
 
   @ApiPropertyOptional({
     example: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],

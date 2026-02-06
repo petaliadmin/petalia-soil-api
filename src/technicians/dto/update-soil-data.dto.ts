@@ -4,6 +4,8 @@ import {
   IsNumber,
   IsOptional,
   IsEnum,
+  IsString,
+  IsDateString,
   ValidateNested,
   Min,
   Max,
@@ -28,6 +30,23 @@ class NpkDto {
   @IsNumber()
   @Min(0)
   potassium: number;
+}
+
+/**
+ * DTO pour la localisation GPS de la mesure
+ */
+class MeasurementLocationDto {
+  @ApiProperty({ description: 'Latitude GPS', example: 14.6928 })
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  latitude: number;
+
+  @ApiProperty({ description: 'Longitude GPS', example: -17.4467 })
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  longitude: number;
 }
 
 /**
@@ -89,4 +108,37 @@ export class UpdateSoilDataDto {
   @Min(0)
   @IsOptional()
   organicMatter?: number;
+
+  @ApiPropertyOptional({
+    description: 'Modèle/nom du capteur utilisé',
+    example: 'SoilSensor Pro 3000',
+  })
+  @IsString()
+  @IsOptional()
+  sensorModel?: string;
+
+  @ApiPropertyOptional({
+    description: 'Numéro de série du capteur',
+    example: 'SS-2024-001234',
+  })
+  @IsString()
+  @IsOptional()
+  sensorSerialNumber?: string;
+
+  @ApiPropertyOptional({
+    description: 'Date de la mesure (ISO 8601)',
+    example: '2024-06-15T10:30:00.000Z',
+  })
+  @IsDateString()
+  @IsOptional()
+  measurementDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Localisation GPS de la mesure',
+    type: MeasurementLocationDto,
+  })
+  @ValidateNested()
+  @Type(() => MeasurementLocationDto)
+  @IsOptional()
+  measurementLocation?: MeasurementLocationDto;
 }

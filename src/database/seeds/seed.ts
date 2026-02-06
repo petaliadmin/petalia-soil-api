@@ -121,7 +121,7 @@ async function seed() {
 
   // Create users
   console.log('👤 Creating users...');
-  const hashedPassword = await bcrypt.hash('Password123!', 10);
+  const hashedPassword = await bcrypt.hash('S0l@ris2O25', 10);
 
   const users = await userModel.insertMany([
     {

@@ -12,6 +12,7 @@ import {
   SoilAnalysisRequestSchema,
 } from '../soil-analysis-requests/schemas/soil-analysis-request.schema';
 import { LandsModule } from '../lands/lands.module';
+import { SoilAnalysisRequestsModule } from '../soil-analysis-requests/soil-analysis-requests.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { LandsModule } from '../lands/lands.module';
       { name: SoilAnalysisRequest.name, schema: SoilAnalysisRequestSchema },
     ]),
     forwardRef(() => LandsModule),
+    SoilAnalysisRequestsModule,
   ],
   controllers: [TechniciansController, MissionsController, TechnicianPortalController],
   providers: [TechniciansService, MissionsService],

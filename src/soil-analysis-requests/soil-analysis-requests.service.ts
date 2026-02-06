@@ -100,6 +100,25 @@ export class SoilAnalysisRequestsService {
   }
 
   /**
+   * Lier une terre à une demande d'analyse
+   */
+  async linkLand(
+    requestId: string,
+    landId: string,
+  ): Promise<SoilAnalysisRequestDocument> {
+    const request = await this.soilAnalysisRequestModel
+      .findByIdAndUpdate(requestId, { land: landId }, { new: true })
+      .populate('land')
+      .exec();
+
+    if (!request) {
+      throw new NotFoundException("Demande d'analyse non trouvée");
+    }
+
+    return request;
+  }
+
+  /**
    * Supprimer une demande
    */
   async remove(id: string): Promise<void> {
