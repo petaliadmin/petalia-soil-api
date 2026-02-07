@@ -375,4 +375,38 @@ export class TechnicianPortalController {
       message: 'Terre liée à la demande d\'analyse avec succès',
     };
   }
+
+  @Patch('lands/:id/location-photos')
+  @UseGuards(TechnicianAuthGuard)
+  @ApiHeader({
+    name: 'x-technician-code',
+    description: "Code d'accès du technicien (ex: TECH-ABC123)",
+    required: true,
+  })
+  @ApiOperation({ summary: 'Compléter la géolocalisation et les photos d\'une terre' })
+  @ApiParam({ name: 'id', description: 'ID de la terre' })
+  @ApiResponse({ status: 200, description: 'Terre mise à jour' })
+  @ApiResponse({ status: 404, description: 'Terre non trouvée' })
+  async updateLocationAndPhotos(
+    @Param('id') id: string,
+    @Body() body: {
+      location?: { type?: string; coordinates: number[] };
+      images?: string[];
+      thumbnail?: string;
+    },
+  ) {
+    const land = await this.landsService.updateLocationAndPhotos(id, body);
+
+    return {
+      success: true,
+      data: {
+        id: land._id,
+        title: land.title,
+        location: land.location,
+        images: land.images,
+        thumbnail: land.thumbnail,
+      },
+      message: 'Géolocalisation et photos mises à jour avec succès',
+    };
+  }
 }

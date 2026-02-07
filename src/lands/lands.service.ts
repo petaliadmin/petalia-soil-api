@@ -336,6 +336,37 @@ export class LandsService {
   }
 
   /**
+   * Mettre à jour la géolocalisation et les photos par un technicien
+   */
+  async updateLocationAndPhotos(
+    id: string,
+    data: {
+      location?: { type?: string; coordinates: number[] };
+      images?: string[];
+      thumbnail?: string;
+    },
+  ): Promise<LandDocument> {
+    const land = await this.findOne(id);
+
+    if (data.location) {
+      land.location = {
+        type: data.location.type || 'Point',
+        coordinates: data.location.coordinates,
+      } as any;
+    }
+
+    if (data.images) {
+      land.images = [...(land.images || []), ...data.images];
+    }
+
+    if (data.thumbnail) {
+      land.thumbnail = data.thumbnail;
+    }
+
+    return land.save();
+  }
+
+  /**
    * Valider une terre (Admin uniquement)
    */
   async validateLand(id: string, adminId: string): Promise<LandDocument> {

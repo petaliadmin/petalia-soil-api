@@ -73,14 +73,14 @@ export class CreateLandDto {
   @IsString()
   priceUnit?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: LocationDto,
-    description: 'Coordonnées GeoJSON',
+    description: 'Coordonnées GeoJSON (complétées par le technicien si non fournies)',
   })
-  @IsNotEmpty({ message: 'La localisation est requise' })
+  @IsOptional()
   @ValidateNested()
   @Type(() => LocationDto)
-  location: LocationDto;
+  location?: LocationDto;
 
   @ApiPropertyOptional({
     type: AddressDto,

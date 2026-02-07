@@ -47,8 +47,8 @@ export class Land {
   })
   status: LandStatus;
 
-  @Prop({ type: LocationSchema, required: true })
-  location: Location;
+  @Prop({ type: LocationSchema })
+  location?: Location;
 
   @Prop({ type: AddressSchema })
   address?: Address;
