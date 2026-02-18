@@ -1,4 +1,4 @@
-import { ServiceRequestStatus } from '@/common/enums/marketplace.enum';
+import { ServiceRequestStatus } from '../common/enums/marketplace.enum';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 

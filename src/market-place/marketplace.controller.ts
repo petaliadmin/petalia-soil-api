@@ -18,8 +18,8 @@ import {
 import { JwtAuthGuard, RolesGuard } from '../common/guards';
 import { Roles, CurrentUser } from '../common/decorators';
 import { UserRole } from '../common/enums';
-import { ProviderStatus } from '@/common/enums/marketplace.enum';
-import { ProviderType } from '@/common/enums/provider-type.enum';
+import { ProviderStatus } from '../common/enums/marketplace.enum';
+import { ProviderType } from '../common/enums/provider-type.enum';
 
 
 // ─── Guard pour le portail fournisseur (JWT avec role PROVIDER) ───────────────

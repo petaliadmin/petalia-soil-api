@@ -30,7 +30,7 @@ import {
 import { Provider, ProviderDocument } from './schema/provider.schema';
 import { ServiceOffer, ServiceOfferDocument } from './schema/service-offer.schema';
 import { ServiceRequest, ServiceRequestDocument } from './service-request.schema';
-import { ProviderStatus, ServiceRequestStatus } from '@/common/enums/marketplace.enum';
+import { ProviderStatus, ServiceRequestStatus } from '../common/enums/marketplace.enum';
 
 /**
  * Génère un code d'accès unique pour le portail fournisseur

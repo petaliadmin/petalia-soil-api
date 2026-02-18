@@ -4,7 +4,7 @@ import {
   IsArray, IsNumber, IsBoolean, IsUrl, MinLength, Min, Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ProviderType } from '@/common/enums/provider-type.enum';
+import { ProviderType } from '../../common/enums/provider-type.enum';
 
 // ─── Inscription (auto-registration) ─────────────────────────────────────────
 
