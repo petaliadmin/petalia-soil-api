@@ -350,12 +350,24 @@ export class MarketplaceService {
 
     if (category) query.category = { $regex: category, $options: 'i' };
     if (maxPrice) query.price = { $lte: maxPrice };
-    if (region) query.$or = [{ availableRegions: region }, { isAvailableNationwide: true }];
-    if (search) query.$or = [
-      { title: { $regex: search, $options: 'i' } },
-      { description: { $regex: search, $options: 'i' } },
-      { tags: { $regex: search, $options: 'i' } },
-    ];
+
+    // Utiliser $and pour combiner les conditions $or sans conflit
+    const andConditions: any[] = [];
+    if (region) {
+      andConditions.push({ $or: [{ availableRegions: region }, { isAvailableNationwide: true }] });
+    }
+    if (search) {
+      andConditions.push({
+        $or: [
+          { title: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+          { tags: { $regex: search, $options: 'i' } },
+        ],
+      });
+    }
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
+    }
 
     const skip = (page - 1) * limit;
     const [offers, total] = await Promise.all([

@@ -12,10 +12,11 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   // Activer CORS
+  const allowedOrigins = configService.get<string>('CORS_ORIGINS');
   app.enableCors({
-    origin: '*', // En production, spécifier les domaines autorisés
+    origin: allowedOrigins ? allowedOrigins.split(',') : '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
+    credentials: !!allowedOrigins,
   });
 
   // Validation globale des DTOs

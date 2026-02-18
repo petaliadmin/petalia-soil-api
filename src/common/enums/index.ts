@@ -8,3 +8,5 @@ export * from './analysis-request-status.enum';
 export * from './senegal-region.enum';
 export * from './technician-status.enum';
 export * from './mission-status.enum';
+export * from './marketplace.enum';
+export * from './provider-type.enum';

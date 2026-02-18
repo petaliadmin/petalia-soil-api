@@ -18,9 +18,9 @@ export class UsersService {
    * Crée un nouvel utilisateur avec mot de passe hashé
    */
   async create(createUserDto: CreateUserDto): Promise<UserDocument> {
-    // Vérifier si l'email existe déjà
-    const existingUser = await this.userModel.findOne({ 
-      email: createUserDto.email 
+    // Vérifier si l'email existe déjà (normaliser en lowercase car le schema applique lowercase)
+    const existingUser = await this.userModel.findOne({
+      email: createUserDto.email.toLowerCase()
     });
     
     if (existingUser) {
