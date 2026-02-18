@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
-import { ProviderStatus as PS } from '../../common/enums/marketplace.enum';
-import { ProviderType } from '@/common/enums/provider-type.enum';
+import { ProviderType } from '../../common/enums/provider-type.enum';
+import { ProviderStatus } from '../../common/enums/marketplace.enum';
 
 export type ProviderDocument = Provider & Document;
 
@@ -50,7 +50,7 @@ export class Provider {
   @Prop({ required: true, trim: true })
   fullName: string;
 
-  @Prop({ required: true, unique: true, lowercase: true, trim: true })
+  @Prop({ required: true, lowercase: true, trim: true })
   email: string;
 
   @Prop({ required: true })
@@ -132,10 +132,10 @@ export class Provider {
   @Prop({
     required: true,
     type: String,
-    enum: Object.values(PS),
-    default: PS.PENDING,
+    enum: Object.values(ProviderStatus),
+    default: ProviderStatus.PENDING,
   })
-  status: PS;
+  status: ProviderStatus;
 
   @Prop({ trim: true })
   rejectionReason?: string;  // Raison du rejet par l'admin
@@ -160,7 +160,7 @@ export class Provider {
   responseRate: number;     // % de demandes auxquelles il répond
 
   // ─── Code d'accès portail ─────────────────────────────────────────
-  @Prop({ unique: true, sparse: true })
+  @Prop({ sparse: true })
   accessCode?: string;      // Généré après validation par l'admin
 
   // ─── Timestamps ──────────────────────────────────────────────────
@@ -180,7 +180,10 @@ export const ProviderSchema = SchemaFactory.createForClass(Provider);
 ProviderSchema.index({ providerType: 1 });
 ProviderSchema.index({ status: 1 });
 ProviderSchema.index({ coverageRegions: 1 });
-ProviderSchema.index({ email: 1 });
 ProviderSchema.index({ isFeatured: 1 });
 ProviderSchema.index({ averageRating: -1 });
 ProviderSchema.index({ providerType: 1, status: 1, coverageRegions: 1 });
+
+// Index uniques
+ProviderSchema.index({ email: 1 }, { unique: true });
+ProviderSchema.index({ accessCode: 1 }, { unique: true, sparse: true });
