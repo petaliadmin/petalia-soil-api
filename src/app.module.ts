@@ -10,6 +10,7 @@ import { ContactModule } from './contact/contact.module';
 import { InteractionsModule } from './interactions/interactions.module';
 import { SoilAnalysisRequestsModule } from './soil-analysis-requests/soil-analysis-requests.module';
 import { TechniciansModule } from './technicians/technicians.module';
+import { MarketplaceModule } from './market-place/marketplace.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { TechniciansModule } from './technicians/technicians.module';
     InteractionsModule,
     SoilAnalysisRequestsModule,
     TechniciansModule,
+    MarketplaceModule
   ],
 })
 export class AppModule {}
