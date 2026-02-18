@@ -61,7 +61,7 @@ export class SoilParameters {
 
   @Prop({
     type: MongooseSchema.Types.ObjectId,
-    ref: 'Technician',
+    ref: 'Provider',
   })
   measuredBy?: MongooseSchema.Types.ObjectId;
 }

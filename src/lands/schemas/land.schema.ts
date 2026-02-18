@@ -95,9 +95,9 @@ export class Land {
 
   @Prop({
     type: MongooseSchema.Types.ObjectId,
-    ref: 'Technician',
+    ref: 'Provider',
   })
-  createdByTechnician?: MongooseSchema.Types.ObjectId;
+  createdByProvider?: MongooseSchema.Types.ObjectId;
 
   @Prop()
   createdAt: Date;
@@ -119,7 +119,7 @@ LandSchema.index({ surfaceHectares: 1 });
 LandSchema.index({ 'address.region': 1 });
 LandSchema.index({ 'address.city': 1 });
 LandSchema.index({ isValidated: 1 });
-LandSchema.index({ createdByTechnician: 1 });
+LandSchema.index({ createdByProvider: 1 });
 
 // Middleware pour calculer pricePerHectare avant sauvegarde
 LandSchema.pre('save', function (next) {

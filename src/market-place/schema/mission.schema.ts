@@ -18,10 +18,10 @@ export class Mission {
 
   @Prop({
     type: MongooseSchema.Types.ObjectId,
-    ref: 'Technician',
+    ref: 'Provider',
     required: true,
   })
-  technician: MongooseSchema.Types.ObjectId;
+  provider: MongooseSchema.Types.ObjectId;
 
   @Prop({
     type: MongooseSchema.Types.ObjectId,
@@ -66,7 +66,7 @@ export const MissionSchema = SchemaFactory.createForClass(Mission);
 
 // Index pour les requêtes courantes
 MissionSchema.index({ analysisRequest: 1 });
-MissionSchema.index({ technician: 1 });
+MissionSchema.index({ provider: 1 });
 MissionSchema.index({ status: 1 });
 MissionSchema.index({ scheduledDate: 1 });
-MissionSchema.index({ technician: 1, status: 1 });
+MissionSchema.index({ provider: 1, status: 1 });

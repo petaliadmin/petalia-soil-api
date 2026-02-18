@@ -9,7 +9,6 @@ import { RecommendationsModule } from './recommendations/recommendations.module'
 import { ContactModule } from './contact/contact.module';
 import { InteractionsModule } from './interactions/interactions.module';
 import { SoilAnalysisRequestsModule } from './soil-analysis-requests/soil-analysis-requests.module';
-import { TechniciansModule } from './technicians/technicians.module';
 import { MarketplaceModule } from './market-place/marketplace.module';
 
 @Module({
@@ -40,7 +39,6 @@ import { MarketplaceModule } from './market-place/marketplace.module';
     ContactModule,
     InteractionsModule,
     SoilAnalysisRequestsModule,
-    TechniciansModule,
     MarketplaceModule
   ],
 })

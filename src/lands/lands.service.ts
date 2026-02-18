@@ -286,31 +286,31 @@ export class LandsService {
   }
 
   /**
-   * Créer une terre par un technicien (en attente de validation admin)
+   * Créer une terre par un provider/agronome (en attente de validation admin)
    */
-  async createByTechnician(
+  async createByProvider(
     createLandDto: CreateLandDto,
     ownerId: string,
-    technicianId: string,
+    providerId: string,
   ): Promise<LandDocument> {
     const createdLand = new this.landModel({
       ...createLandDto,
       owner: ownerId,
       status: LandStatus.AVAILABLE,
       isValidated: false,
-      createdByTechnician: technicianId,
+      createdByProvider: providerId,
     });
 
     return createdLand.save();
   }
 
   /**
-   * Mettre à jour les paramètres du sol par un technicien
+   * Mettre à jour les paramètres du sol par un provider/agronome
    */
-  async updateSoilParametersByTechnician(
+  async updateSoilParametersByProvider(
     id: string,
     soilParameters: any,
-    technicianId: string,
+    providerId: string,
   ): Promise<LandDocument> {
     const land = await this.findOne(id);
 
@@ -327,7 +327,7 @@ export class LandsService {
 
     land.soilParameters = {
       ...soilParameters,
-      measuredBy: technicianId,
+      measuredBy: providerId,
       measurementDate: soilParameters.measurementDate
         ? new Date(soilParameters.measurementDate)
         : new Date(),
@@ -419,7 +419,7 @@ export class LandsService {
       this.landModel
         .find(query)
         .populate('owner', 'fullName email phone whatsapp avatar')
-        .populate('createdByTechnician', 'fullName email phone')
+        .populate('createdByProvider', 'fullName email phone')
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 })

@@ -150,6 +150,9 @@ export class Provider {
   @Prop({ default: 0 })
   completedServices: number;
 
+  @Prop({ default: 0 })
+  completedMissions: number;
+
   @Prop({ default: 0, min: 0, max: 5 })
   averageRating: number;
 

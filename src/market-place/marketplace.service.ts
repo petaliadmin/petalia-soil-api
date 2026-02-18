@@ -4,6 +4,7 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -27,10 +28,23 @@ import {
   RespondToServiceRequestDto,
   RateServiceRequestDto,
 } from './dto/service.dto';
+import {
+  CreateMissionDto,
+  UpdateMissionDto,
+  FilterMissionsDto,
+} from './dto/mission.dto';
 import { Provider, ProviderDocument } from './schema/provider.schema';
 import { ServiceOffer, ServiceOfferDocument } from './schema/service-offer.schema';
 import { ServiceRequest, ServiceRequestDocument } from './service-request.schema';
+import { Mission, MissionDocument } from './schema/mission.schema';
+import {
+  SoilAnalysisRequest,
+  SoilAnalysisRequestDocument,
+} from '../soil-analysis-requests/schemas/soil-analysis-request.schema';
 import { ProviderStatus, ServiceRequestStatus } from '../common/enums/marketplace.enum';
+import { ProviderType } from '../common/enums/provider-type.enum';
+import { MissionStatus, AnalysisRequestStatus } from '../common/enums';
+import { createPaginatedResult, calculateSkip } from '../common/dto';
 
 /**
  * Génère un code d'accès unique pour le portail fournisseur
@@ -52,6 +66,10 @@ export class MarketplaceService {
     private serviceOfferModel: Model<ServiceOfferDocument>,
     @InjectModel(ServiceRequest.name)
     private serviceRequestModel: Model<ServiceRequestDocument>,
+    @InjectModel(Mission.name)
+    private missionModel: Model<MissionDocument>,
+    @InjectModel(SoilAnalysisRequest.name)
+    private analysisRequestModel: Model<SoilAnalysisRequestDocument>,
     private jwtService: JwtService,
   ) {}
 
@@ -484,6 +502,278 @@ export class MarketplaceService {
   }
 
   // ═══════════════════════════════════════════════════════════════════
+  // MISSIONS (migrées depuis TechniciansModule)
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * Créer un nouvel ordre de mission
+   */
+  async createMission(
+    createDto: CreateMissionDto,
+    adminId: string,
+  ): Promise<MissionDocument> {
+    // Vérifier que la demande d'analyse existe
+    const analysisRequest = await this.analysisRequestModel.findById(
+      createDto.analysisRequestId,
+    );
+    if (!analysisRequest) {
+      throw new NotFoundException("Demande d'analyse non trouvée");
+    }
+
+    // Vérifier que le provider existe, est actif et est agronome
+    const provider = await this.providerModel.findById(createDto.providerId);
+    if (!provider) {
+      throw new NotFoundException('Fournisseur non trouvé');
+    }
+    if (provider.status !== ProviderStatus.ACTIVE) {
+      throw new BadRequestException("Ce fournisseur n'est pas disponible");
+    }
+    if (provider.providerType !== ProviderType.AGRONOMIST) {
+      throw new BadRequestException("Seuls les agronomes peuvent être assignés à des missions");
+    }
+
+    // Créer la mission
+    const mission = new this.missionModel({
+      analysisRequest: createDto.analysisRequestId,
+      provider: createDto.providerId,
+      assignedBy: adminId,
+      scheduledDate: new Date(createDto.scheduledDate),
+      instructions: createDto.instructions,
+      status: MissionStatus.ASSIGNED,
+    });
+
+    const savedMission = await mission.save();
+
+    // Mettre à jour le statut de la demande d'analyse
+    await this.analysisRequestModel.findByIdAndUpdate(
+      createDto.analysisRequestId,
+      { status: AnalysisRequestStatus.PROCESSING },
+    );
+
+    return savedMission.populate([
+      { path: 'provider', select: 'fullName email phone' },
+      { path: 'analysisRequest', select: 'fullName region commune surface' },
+    ]);
+  }
+
+  /**
+   * Récupérer toutes les missions avec filtres et pagination
+   */
+  async findAllMissions(filterDto: FilterMissionsDto) {
+    const { status, providerId, page = 1, limit = 10 } = filterDto;
+
+    const query: any = {};
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (providerId) {
+      query.provider = providerId;
+    }
+
+    const skip = calculateSkip(page, limit);
+
+    const [missions, total] = await Promise.all([
+      this.missionModel
+        .find(query)
+        .populate('provider', 'fullName email phone')
+        .populate('analysisRequest', 'fullName email phone region commune surface')
+        .populate('assignedBy', 'fullName email')
+        .skip(skip)
+        .limit(limit)
+        .sort({ scheduledDate: -1 })
+        .exec(),
+      this.missionModel.countDocuments(query),
+    ]);
+
+    return createPaginatedResult(missions, total, page, limit);
+  }
+
+  /**
+   * Récupérer une mission par ID
+   */
+  async findOneMission(id: string): Promise<MissionDocument> {
+    const mission = await this.missionModel
+      .findById(id)
+      .populate('provider', 'fullName email phone specialization')
+      .populate({
+        path: 'analysisRequest',
+        populate: {
+          path: 'land',
+          populate: {
+            path: 'owner',
+            select: 'fullName email phone whatsapp',
+          },
+        },
+      })
+      .populate('assignedBy', 'fullName email')
+      .exec();
+
+    if (!mission) {
+      throw new NotFoundException('Mission non trouvée');
+    }
+
+    return mission;
+  }
+
+  /**
+   * Récupérer les missions d'un provider
+   */
+  async findMissionsByProvider(providerId: string): Promise<MissionDocument[]> {
+    return this.missionModel
+      .find({ provider: providerId })
+      .populate({
+        path: 'analysisRequest',
+        populate: {
+          path: 'land',
+          populate: {
+            path: 'owner',
+            select: 'fullName email phone whatsapp',
+          },
+        },
+      })
+      .sort({ scheduledDate: -1 })
+      .exec();
+  }
+
+  /**
+   * Récupérer la mission associée à une demande d'analyse
+   */
+  async findMissionByAnalysisRequest(analysisRequestId: string): Promise<MissionDocument | null> {
+    return this.missionModel
+      .findOne({ analysisRequest: analysisRequestId })
+      .populate('provider', 'fullName email phone')
+      .exec();
+  }
+
+  /**
+   * Mettre à jour une mission
+   */
+  async updateMission(
+    id: string,
+    updateDto: UpdateMissionDto,
+  ): Promise<MissionDocument> {
+    const mission = await this.missionModel.findById(id);
+
+    if (!mission) {
+      throw new NotFoundException('Mission non trouvée');
+    }
+
+    // Si la mission est marquée comme complétée
+    if (updateDto.status === MissionStatus.COMPLETED && mission.status !== MissionStatus.COMPLETED) {
+      updateDto.completedDate = updateDto.completedDate || new Date().toISOString();
+
+      // Incrémenter le compteur de missions du provider
+      await this.providerModel.findByIdAndUpdate(mission.provider, {
+        $inc: { completedMissions: 1 },
+      });
+
+      // Mettre à jour le statut de la demande d'analyse
+      await this.analysisRequestModel.findByIdAndUpdate(mission.analysisRequest, {
+        status: AnalysisRequestStatus.COMPLETED,
+      });
+    }
+
+    // Si la mission est annulée
+    if (updateDto.status === MissionStatus.CANCELLED) {
+      // Remettre la demande en attente
+      await this.analysisRequestModel.findByIdAndUpdate(mission.analysisRequest, {
+        status: AnalysisRequestStatus.PENDING,
+      });
+    }
+
+    Object.assign(mission, updateDto);
+    if (updateDto.scheduledDate) {
+      mission.scheduledDate = new Date(updateDto.scheduledDate);
+    }
+    if (updateDto.completedDate) {
+      mission.completedDate = new Date(updateDto.completedDate);
+    }
+
+    await mission.save();
+
+    return mission.populate([
+      { path: 'provider', select: 'fullName email phone' },
+      { path: 'analysisRequest', select: 'fullName region commune surface' },
+    ]);
+  }
+
+  /**
+   * Supprimer une mission
+   */
+  async removeMission(id: string): Promise<void> {
+    const mission = await this.missionModel.findById(id);
+
+    if (!mission) {
+      throw new NotFoundException('Mission non trouvée');
+    }
+
+    // Remettre la demande en attente si la mission n'était pas complétée
+    if (mission.status !== MissionStatus.COMPLETED) {
+      await this.analysisRequestModel.findByIdAndUpdate(mission.analysisRequest, {
+        status: AnalysisRequestStatus.PENDING,
+      });
+    }
+
+    await this.missionModel.findByIdAndDelete(id);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // HOME PAGE
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * Données pour la page d'accueil de la marketplace
+   */
+  async getHomePage() {
+    const [
+      featuredProviders,
+      recentOffers,
+      providerCategories,
+      totalProviders,
+      totalOffers,
+      totalCompletedServices,
+    ] = await Promise.all([
+      // 6 providers featured & actifs
+      this.providerModel
+        .find({ isFeatured: true, status: ProviderStatus.ACTIVE })
+        .select('-password -accessCode')
+        .limit(6)
+        .sort({ averageRating: -1 })
+        .exec(),
+      // 8 dernières offres actives
+      this.serviceOfferModel
+        .find({ status: 'active' })
+        .populate('provider', 'fullName companyName averageRating isVerified avatar providerType')
+        .limit(8)
+        .sort({ createdAt: -1 })
+        .exec(),
+      // Compteurs par providerType
+      this.providerModel.aggregate([
+        { $match: { status: ProviderStatus.ACTIVE } },
+        { $group: { _id: '$providerType', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ]),
+      // Stats globales
+      this.providerModel.countDocuments({ status: ProviderStatus.ACTIVE }),
+      this.serviceOfferModel.countDocuments({ status: 'active' }),
+      this.serviceRequestModel.countDocuments({ status: ServiceRequestStatus.COMPLETED }),
+    ]);
+
+    return {
+      featuredProviders,
+      recentOffers,
+      providerCategories,
+      stats: {
+        totalProviders,
+        totalOffers,
+        totalCompletedServices,
+      },
+    };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
   // STATS POUR L'ADMIN
   // ═══════════════════════════════════════════════════════════════════
 
@@ -501,6 +791,30 @@ export class MarketplaceService {
     const totalRequests = await this.serviceRequestModel.countDocuments();
     const pendingRequests = await this.serviceRequestModel.countDocuments({ status: ServiceRequestStatus.PENDING });
 
-    return { total, pending, active, byType, totalRequests, pendingRequests };
+    // Stats missions
+    const [totalMissions, inProgressMissions, completedMissions, activeAgronomists] = await Promise.all([
+      this.missionModel.countDocuments(),
+      this.missionModel.countDocuments({ status: MissionStatus.IN_PROGRESS }),
+      this.missionModel.countDocuments({ status: MissionStatus.COMPLETED }),
+      this.providerModel.countDocuments({
+        providerType: ProviderType.AGRONOMIST,
+        status: ProviderStatus.ACTIVE,
+      }),
+    ]);
+
+    return {
+      total,
+      pending,
+      active,
+      byType,
+      totalRequests,
+      pendingRequests,
+      missions: {
+        total: totalMissions,
+        inProgress: inProgressMissions,
+        completed: completedMissions,
+      },
+      activeAgronomists,
+    };
   }
 }

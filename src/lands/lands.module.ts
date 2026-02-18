@@ -8,7 +8,7 @@ import { UserVisit, UserVisitSchema } from '../interactions/schemas';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { SoilAnalysisRequest, SoilAnalysisRequestSchema } from '../soil-analysis-requests/schemas/soil-analysis-request.schema';
 import { RecommendationsModule } from '../recommendations/recommendations.module';
-import { TechniciansModule } from '../technicians/technicians.module';
+import { MarketplaceModule } from '../market-place/marketplace.module';
 import { ReportsService } from '../reports/reports.service';
 import { PdfGeneratorService } from '../reports/pdf/pdf-generator.service';
 
@@ -21,7 +21,7 @@ import { PdfGeneratorService } from '../reports/pdf/pdf-generator.service';
       { name: SoilAnalysisRequest.name, schema: SoilAnalysisRequestSchema },
     ]),
     RecommendationsModule,
-    forwardRef(() => TechniciansModule),
+    forwardRef(() => MarketplaceModule),
   ],
   controllers: [LandsController],
   providers: [LandsService, VisitTrackerService, ReportsService, PdfGeneratorService],

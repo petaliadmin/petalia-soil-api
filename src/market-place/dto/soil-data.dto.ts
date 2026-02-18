@@ -73,7 +73,7 @@ export class UpdateSoilDataDto {
   npk: NpkDto;
 
   @ApiPropertyOptional({
-    description: 'Taux d\'humidité du sol (%)',
+    description: "Taux d'humidité du sol (%)",
     example: 25,
     minimum: 0,
     maximum: 100,
